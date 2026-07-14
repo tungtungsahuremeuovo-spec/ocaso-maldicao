@@ -1,9 +1,7 @@
 import appState from './app.js';
 import { router } from '../../core/router/router.js';
 import { showToast } from '../../components/Toast/Toast.js';
-import { triggerImport } from '../../core/database/importExport.js';
 
-// Módulos disponíveis para cada papel
 const MASTER_MODULES = [
     { id: 'dashboard', label: '🏠 Painel' },
     { id: 'personagens', label: '🧙 Personagens' },
@@ -27,12 +25,8 @@ const PLAYER_MODULES = [
 function buildSidebar(modules) {
     const nav = document.getElementById('sidebarNav');
     nav.innerHTML = modules.map(m =>
-        `<a href="#${m.id}" data-module="${m.id}" class="nav-link">
-            <span>${m.label}</span>
-            <span class="badge" id="badge-${m.id}"></span>
-        </a>`
+        `<a href="#${m.id}" data-module="${m.id}" class="nav-link">${m.label}</a>`
     ).join('');
-
     nav.addEventListener('click', (e) => {
         const link = e.target.closest('a');
         if (!link) return;
@@ -93,26 +87,20 @@ function setupMenuScreen() {
 
     document.getElementById('btnMaster').addEventListener('click', () => {
         appState.setRole('master');
-        // Se não houver dados salvos, carrega padrão
-        if (!localStorage.getItem('ocaso_maldicao_data')) {
-            appState.save();
+        if (!localStorage.getItem('ocaso_data')) {
+            appState.saveLocallyAndSend();
         }
         location.reload();
     });
 
     document.getElementById('btnPlayer').addEventListener('click', () => {
-        triggerImport((importedData) => {
-            // Valida dados mínimos
-            if (!importedData.campaign || !importedData.characters) {
-                alert('Arquivo de campanha inválido!');
-                return;
-            }
-            // Salva dados do jogador
-            appState.data = { ...appState.getDefaultData(), ...importedData, playerLoaded: true };
-            appState.setRole('player');
-            appState.save();
-            location.reload();
-        });
+        const peerId = prompt('Insira o ID da sala (fornecido pelo mestre):');
+        if (!peerId) return;
+        localStorage.setItem('ocaso_peerId', peerId.trim());
+        appState.setRole('player');
+        appState.peerId = peerId.trim();
+        appState.connectToHost(peerId.trim());
+        location.reload();
     });
 }
 
@@ -123,7 +111,6 @@ async function init() {
     } else {
         setupMenuScreen();
     }
-    console.log('⛩️ Ocaso & Maldição — Gerenciador de Campanha v3.1');
 }
 
 init();

@@ -1,13 +1,21 @@
-import { saveData, loadData } from '../../core/database/storage.js';
-
-const STORAGE_KEY = 'ocaso_maldicao_data';
-
+// assets/js/app.js
 class AppState {
     constructor() {
-        this.role = localStorage.getItem('ocaso_role') || null; // 'master', 'player' ou null
+        this.role = localStorage.getItem('ocaso_role') || null;
+        this.hostId = localStorage.getItem('ocaso_hostId') || null; // ID do mestre
+        this.peer = null;
+        this.connection = null;
         this.data = this.getDefaultData();
         this.subscribers = new Map();
-        if (this.role) this.load(); // só carrega dados se já tiver papel definido
+
+        if (this.role === 'master') {
+            this.loadLocal();
+            if (this.hostId) {
+                this.startHosting(this.hostId);
+            }
+        } else if (this.role === 'player' && this.hostId) {
+            this.connectToHost(this.hostId);
+        }
     }
 
     getDefaultData() {
@@ -21,8 +29,7 @@ class AppState {
             spells: [],
             domains: [],
             lores: [],
-            settings: { theme: 'default', autoSave: true, language: 'pt-BR', diceAnimation: true },
-            masterPassword: '1234' // senha padrão do mestre (pode ser alterada nas configs)
+            settings: { theme: 'default', autoSave: true, language: 'pt-BR' }
         };
     }
 
@@ -30,47 +37,127 @@ class AppState {
         this.role = role;
         localStorage.setItem('ocaso_role', role);
     }
-
-    getRole() {
-        return this.role || localStorage.getItem('ocaso_role');
-    }
+    getRole() { return this.role; }
 
     clearRole() {
         localStorage.removeItem('ocaso_role');
+        localStorage.removeItem('ocaso_hostId');
         this.role = null;
+        this.hostId = null;
+        this.destroyOnlineRoom();
     }
 
-    // Exporta apenas informações públicas para jogadores
-    exportPlayerPackage() {
-        return {
-            campaign: this.data.campaign,
-            characters: this.data.characters
-                .filter(c => c.isPlayerCharacter) // apenas personagens de jogadores
-                .map(c => ({
-                    nome: c.nome,
-                    classe: c.classe,
-                    estilo: c.estilo,
-                    grau: c.grau,
-                    hpMax: c.hpMax,
-                    hp: c.hp,
-                    eaMax: c.eaMax,
-                    ea: c.ea,
-                    pericias: c.pericias,
-                    cicatrizes: c.cicatrizes,
-                    ambicao: c.ambicao,
-                    notas: c.notas // inclui notas, mas o mestre decide o que colocar
-                })),
-            quests: this.data.quests
-                .filter(q => q.visivelJogadores)
-                .map(q => ({ titulo: q.titulo, desc: q.desc, status: q.status, recompensa: q.recompensa }))
-        };
+    // ---- Persistência local do mestre ----
+    saveLocally() {
+        localStorage.setItem('ocaso_data', JSON.stringify(this.data));
+    }
+    loadLocal() {
+        const saved = localStorage.getItem('ocaso_data');
+        if (saved) this.data = { ...this.getDefaultData(), ...JSON.parse(saved) };
     }
 
+    // ---- Lógica P2P ----
+
+    // Mestre: inicia o host com um ID fixo (ou gera um novo)
+    startHosting(id) {
+        if (this.peer) this.destroyOnlineRoom();
+        this.peer = new Peer(id);
+        this.peer.on('open', (peerId) => {
+            this.hostId = peerId;
+            localStorage.setItem('ocaso_hostId', peerId);
+        });
+        this.peer.on('connection', (conn) => {
+            this.connection = conn;
+            conn.on('open', () => {
+                conn.send({ type: 'fullSync', data: this.data });
+            });
+            conn.on('data', (received) => {
+                // Opcional: processar mensagens do jogador
+            });
+        });
+    }
+
+    // Mestre: cria uma nova sala e retorna o ID
+    async createOnlineRoom() {
+        return new Promise((resolve) => {
+            if (this.peer) this.destroyOnlineRoom();
+            this.peer = new Peer(); // ID aleatório
+            this.peer.on('open', (id) => {
+                this.hostId = id;
+                localStorage.setItem('ocaso_hostId', id);
+                this.peer.on('connection', (conn) => {
+                    this.connection = conn;
+                    conn.on('open', () => {
+                        conn.send({ type: 'fullSync', data: this.data });
+                    });
+                    conn.on('data', (msg) => {
+                        // Opcional: lidar com mensagens do jogador
+                    });
+                });
+                resolve(id);
+            });
+            this.peer.on('error', (err) => {
+                console.error('Erro no Peer:', err);
+                resolve(null);
+            });
+        });
+    }
+
+    // Mestre: destrói a sala
+    destroyOnlineRoom() {
+        if (this.connection) {
+            this.connection.close();
+            this.connection = null;
+        }
+        if (this.peer) {
+            this.peer.destroy();
+            this.peer = null;
+        }
+        localStorage.removeItem('ocaso_hostId');
+        this.hostId = null;
+    }
+
+    // Mestre: envia dados atualizados para o jogador conectado
+    broadcastUpdate() {
+        if (this.connection && this.connection.open) {
+            this.connection.send({ type: 'update', data: this.data });
+        }
+    }
+
+    // Jogador: conecta ao mestre
+    connectToHost(hostId) {
+        this.peer = new Peer();
+        this.peer.on('open', (myId) => {
+            this.connection = this.peer.connect(hostId, { reliable: true });
+            this.connection.on('open', () => {
+                // Conexão estabelecida
+            });
+            this.connection.on('data', (msg) => {
+                if (msg.type === 'fullSync' || msg.type === 'update') {
+                    this.data = { ...this.getDefaultData(), ...msg.data };
+                    this.notifyAll();
+                }
+            });
+        });
+        this.peer.on('error', (err) => {
+            console.error('Erro ao conectar ao host:', err);
+            alert('Não foi possível conectar ao mestre. Verifique o ID da sala.');
+        });
+        this.hostId = hostId;
+        localStorage.setItem('ocaso_hostId', hostId);
+    }
+
+    // ---- Gerenciamento de dados ----
     get(domain) { return this.data[domain]; }
 
     set(domain, value) {
         this.data[domain] = value;
-        this.save();
+        if (this.role === 'master') {
+            this.saveLocally();
+            this.broadcastUpdate();
+        } else if (this.role === 'player') {
+            localStorage.setItem('ocaso_playerData', JSON.stringify(this.data));
+        }
         this.notify(domain);
     }
 
@@ -85,32 +172,48 @@ class AppState {
     }
 
     notify(domain) {
-        const subs = this.subscribers.get(domain) || [];
-        subs.forEach(fn => fn(this.data[domain]));
+        (this.subscribers.get(domain) || []).forEach(fn => fn(this.data[domain]));
     }
-
-    save() {
-        if (this.role) {
-            saveData(STORAGE_KEY, this.data);
-            const indicator = document.getElementById('saveIndicator');
-            if (indicator) {
-                indicator.textContent = '💾 Salvo';
-                setTimeout(() => { if (indicator) indicator.textContent = ''; }, 1500);
-            }
-        }
-    }
-
-    load() {
-        const saved = loadData(STORAGE_KEY);
-        if (saved) {
-            this.data = { ...this.getDefaultData(), ...saved };
-        }
+    notifyAll() {
+        Object.keys(this.data).forEach(d => this.notify(d));
     }
 
     reset() {
         this.data = this.getDefaultData();
-        this.save();
-        Object.keys(this.data).forEach(d => this.notify(d));
+        if (this.role === 'master') {
+            this.saveLocally();
+            this.broadcastUpdate();
+        }
+        this.notifyAll();
+    }
+
+    // Exporta pacote do jogador (apenas dados visíveis)
+    exportPlayerPackage() {
+        return {
+            campaign: this.data.campaign,
+            characters: this.data.characters.filter(c => c.isPlayerCharacter).map(c => ({
+                id: c.id,
+                nome: c.nome,
+                classe: c.classe,
+                estilo: c.estilo,
+                grau: c.grau,
+                hpMax: c.hpMax,
+                hp: c.hp,
+                eaMax: c.eaMax,
+                ea: c.ea,
+                pericias: c.pericias,
+                cicatrizes: c.cicatrizes,
+                ambicao: c.ambicao,
+                notas: c.notas
+            })),
+            quests: this.data.quests.filter(q => q.visivelJogadores).map(q => ({
+                id: q.id,
+                titulo: q.titulo,
+                desc: q.desc,
+                status: q.status,
+                recompensa: q.recompensa
+            }))
+        };
     }
 }
 
