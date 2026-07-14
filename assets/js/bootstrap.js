@@ -1,4 +1,41 @@
+// assets/js/bootstrap.js
 import appState from './app.js';
+
+// --- Obtém a URL base do projeto (raiz) a partir da localização deste script ---
+function getBasePath() {
+    // import.meta.url: "https://usuario.github.io/ocaso-maldicao/assets/js/bootstrap.js"
+    const scriptUrl = import.meta.url;
+    // Remove "assets/js/bootstrap.js" para chegar na raiz
+    return scriptUrl.substring(0, scriptUrl.lastIndexOf('/assets/js/')) + '/';
+}
+
+// --- Navegação robusta ---
+async function navigateTo(moduleId) {
+    const content = document.getElementById('content');
+    if (!content) return;
+
+    const basePath = getBasePath();
+    const htmlUrl = `${basePath}modules/${moduleId}/${moduleId}.html`;
+    const jsPath = `../../modules/${moduleId}/${moduleId}.js`; // relativo a assets/js/
+
+    console.log(`📂 Módulo: ${moduleId}`);
+    console.log(`   Base: ${basePath}`);
+    console.log(`   HTML: ${htmlUrl}`);
+
+    try {
+        const htmlResponse = await fetch(htmlUrl);
+        if (!htmlResponse.ok) throw new Error(`HTML ${htmlResponse.status}`);
+        const html = await htmlResponse.text();
+        content.innerHTML = html;
+
+        const module = await import(jsPath);
+        if (module.init) module.init();
+        console.log(`✅ ${moduleId} carregado.`);
+    } catch (err) {
+        console.error(`❌ ${moduleId}:`, err);
+        content.innerHTML = `<div class="empty-state">❌ Módulo "${moduleId}" não encontrado.</div>`;
+    }
+}
 
 // --- Configuração do Menu Inicial ---
 function setupMenuScreen() {
@@ -106,54 +143,7 @@ function loadDefaultContent(role) {
     const content = document.getElementById('content');
     if (!content) return;
     content.innerHTML = '<div class="loading-screen">⛩️<br>Carregando...</div>';
-    // Carrega o dashboard como padrão (se existir)
     navigateTo('dashboard');
-}
-
-// --- Função auxiliar para construir a URL base (ex: https://usuario.github.io/repo/) ---
-function getBasePath() {
-    // Remove o arquivo do final, mantendo a barra
-    const path = document.baseURI || location.href.split('/').slice(0, -1).join('/') + '/';
-    return path.replace(/\/[^/]*$/, '/'); // remove o último segmento (ex: index.html)
-}
-
-// --- Navegação robusta ---
-async function navigateTo(moduleId) {
-    const content = document.getElementById('content');
-    if (!content) return;
-
-    const basePath = getBasePath();
-    console.log(`📂 Tentando carregar módulo: ${moduleId}`);
-    console.log(`   Base path: ${basePath}`);
-    console.log(`   HTML URL: ${basePath}modules/${moduleId}/${moduleId}.html`);
-
-    try {
-        // Carrega o HTML (caminho absoluto)
-        const htmlUrl = `${basePath}modules/${moduleId}/${moduleId}.html`;
-        const htmlResponse = await fetch(htmlUrl);
-        if (!htmlResponse.ok) {
-            throw new Error(`HTML não encontrado (${htmlResponse.status})`);
-        }
-        const html = await htmlResponse.text();
-        content.innerHTML = html;
-
-        // Importa o JS (caminho relativo a partir deste script: assets/js/bootstrap.js -> ../../modules/...)
-        const jsPath = `../../modules/${moduleId}/${moduleId}.js`;
-        console.log(`   JS import: ${jsPath}`);
-        const module = await import(jsPath);
-        if (module.init) {
-            module.init();
-            console.log(`✅ Módulo "${moduleId}" carregado.`);
-        } else {
-            console.warn(`⚠️ Módulo "${moduleId}" não possui função init().`);
-        }
-    } catch (err) {
-        console.error(`❌ Erro ao carregar "${moduleId}":`, err);
-        content.innerHTML = `<div class="empty-state">
-            ❌ Módulo "${moduleId}" não disponível.<br>
-            <small>Verifique se o arquivo existe em: modules/${moduleId}/${moduleId}.html</small>
-        </div>`;
-    }
 }
 
 // --- Inicializa ---
