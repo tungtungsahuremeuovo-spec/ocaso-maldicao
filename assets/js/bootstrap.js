@@ -1,4 +1,3 @@
-// assets/js/bootstrap.js
 import appState from './app.js';
 
 // --- Configuração do Menu Inicial ---
@@ -8,7 +7,6 @@ function setupMenuScreen() {
     const btnMaster = document.getElementById('btnMaster');
     const btnPlayer = document.getElementById('btnPlayer');
 
-    // Se já tem papel salvo, pula o menu
     if (appState.getRole()) {
         menuScreen.style.display = 'none';
         appContainer.style.display = 'flex';
@@ -16,7 +14,6 @@ function setupMenuScreen() {
         return;
     }
 
-    // Mostra o menu
     menuScreen.style.display = 'flex';
     appContainer.style.display = 'none';
 
@@ -24,7 +21,7 @@ function setupMenuScreen() {
         console.log('👑 Clicou em Mestre');
         appState.setRole('master');
         if (!localStorage.getItem('ocaso_data')) {
-            appState.saveLocally();   // ✅ corrigido
+            appState.saveLocally();
         }
         location.reload();
     });
@@ -43,44 +40,49 @@ function setupMenuScreen() {
     });
 }
 
-// --- Inicialização do App (quando já logado) ---
 function initializeApp() {
     const role = appState.getRole();
     console.log(`🎮 Inicializando como ${role}`);
-
     loadSidebar(role);
     loadDefaultContent(role);
 
     const btnLogout = document.getElementById('btnLogout');
-    btnLogout.style.display = 'block';
-    btnLogout.addEventListener('click', () => {
-        appState.clearRole();
-        location.reload();
-    });
+    if (btnLogout) {
+        btnLogout.style.display = 'block';
+        btnLogout.addEventListener('click', () => {
+            appState.clearRole();
+            location.reload();
+        });
+    }
 
     const campaignInput = document.getElementById('campaignName');
-    campaignInput.value = appState.get('campaign') || 'A Sombra do Dragão';
-    campaignInput.addEventListener('change', () => {
-        appState.set('campaign', campaignInput.value);
-    });
+    if (campaignInput) {
+        campaignInput.value = appState.get('campaign') || 'A Sombra do Dragão';
+        campaignInput.addEventListener('change', () => {
+            appState.set('campaign', campaignInput.value);
+        });
+    }
 }
 
 function loadSidebar(role) {
     const nav = document.getElementById('sidebarNav');
+    if (!nav) return;
     const modules = [
         { id: 'dashboard', label: '📊 Painel' },
+        { id: 'personagens', label: '🧙 Personagens' },
         { id: 'ficha', label: '📋 Ficha' },
-        { id: 'missoes', label: '🏴 Missões' },
-        { id: 'npcs', label: '👥 NPCs' },
-        { id: 'locais', label: '📍 Locais' },
         { id: 'combate', label: '⚔️ Combate' },
-        { id: 'lore', label: '📜 Lore' },
+        { id: 'missoes', label: '🏴 Missões' },
+        { id: 'inventario', label: '💎 Inventário' },
+        { id: 'grimorio', label: '📜 Grimório' },
+        { id: 'dominios', label: '🌌 Domínios' },
+        { id: 'lore', label: '📚 Lore' },
         { id: 'configuracoes', label: '⚙️ Configurações' },
     ];
 
-    const visible = role === 'master'
-        ? modules
-        : modules.filter(m => ['ficha', 'missoes', 'combate', 'configuracoes'].includes(m.id));
+    const visible = role === 'master' ? modules : modules.filter(m =>
+        ['ficha', 'missoes', 'combate', 'configuracoes'].includes(m.id)
+    );
 
     nav.innerHTML = visible.map(m =>
         `<a href="#" data-module="${m.id}" class="nav-link">${m.label}</a>`
@@ -102,29 +104,55 @@ function loadSidebar(role) {
 
 function loadDefaultContent(role) {
     const content = document.getElementById('content');
+    if (!content) return;
     content.innerHTML = '<div class="loading-screen">⛩️<br>Carregando...</div>';
+    // Carrega o dashboard como padrão (se existir)
     navigateTo('dashboard');
 }
 
-// --- Navegação corrigida (caminhos absolutos a partir da raiz) ---
+// --- Função auxiliar para construir a URL base (ex: https://usuario.github.io/repo/) ---
+function getBasePath() {
+    // Remove o arquivo do final, mantendo a barra
+    const path = document.baseURI || location.href.split('/').slice(0, -1).join('/') + '/';
+    return path.replace(/\/[^/]*$/, '/'); // remove o último segmento (ex: index.html)
+}
+
+// --- Navegação robusta ---
 async function navigateTo(moduleId) {
     const content = document.getElementById('content');
-    try {
-        // Caminho correto: sobe dois níveis (de assets/js/ para raiz) e entra em modules/
-        const htmlResponse = await fetch(`../../modules/${moduleId}/${moduleId}.html`);
-        if (!htmlResponse.ok) throw new Error('HTML não encontrado');
+    if (!content) return;
 
+    const basePath = getBasePath();
+    console.log(`📂 Tentando carregar módulo: ${moduleId}`);
+    console.log(`   Base path: ${basePath}`);
+    console.log(`   HTML URL: ${basePath}modules/${moduleId}/${moduleId}.html`);
+
+    try {
+        // Carrega o HTML (caminho absoluto)
+        const htmlUrl = `${basePath}modules/${moduleId}/${moduleId}.html`;
+        const htmlResponse = await fetch(htmlUrl);
+        if (!htmlResponse.ok) {
+            throw new Error(`HTML não encontrado (${htmlResponse.status})`);
+        }
         const html = await htmlResponse.text();
         content.innerHTML = html;
 
-        // Importa o módulo JS correspondente
-        const module = await import(`../../modules/${moduleId}/${moduleId}.js`);
+        // Importa o JS (caminho relativo a partir deste script: assets/js/bootstrap.js -> ../../modules/...)
+        const jsPath = `../../modules/${moduleId}/${moduleId}.js`;
+        console.log(`   JS import: ${jsPath}`);
+        const module = await import(jsPath);
         if (module.init) {
             module.init();
+            console.log(`✅ Módulo "${moduleId}" carregado.`);
+        } else {
+            console.warn(`⚠️ Módulo "${moduleId}" não possui função init().`);
         }
     } catch (err) {
-        console.error('Erro ao carregar módulo:', err);
-        content.innerHTML = `<div class="empty-state">❌ Erro ao carregar "${moduleId}".</div>`;
+        console.error(`❌ Erro ao carregar "${moduleId}":`, err);
+        content.innerHTML = `<div class="empty-state">
+            ❌ Módulo "${moduleId}" não disponível.<br>
+            <small>Verifique se o arquivo existe em: modules/${moduleId}/${moduleId}.html</small>
+        </div>`;
     }
 }
 
@@ -133,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupMenuScreen();
 });
 
-// --- Globais para uso em módulos (opcional) ---
+// --- Globais ---
 window.navigateTo = navigateTo;
 window.showToast = (msg) => {
     const container = document.getElementById('toastContainer');
