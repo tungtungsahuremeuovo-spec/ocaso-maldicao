@@ -14,7 +14,6 @@ export function init() {
         window.showToast?.('📤 Dados exportados!');
     });
 
-    // Mostra o botão de exportar pacote apenas para mestre
     const btnExportPlayer = document.getElementById('btnExportPlayer');
     if (role === 'master') {
         btnExportPlayer.style.display = '';
@@ -34,7 +33,6 @@ export function init() {
         });
     });
 
-    // Mostra o botão de reset apenas para mestre
     const btnReset = document.getElementById('btnReset');
     if (role === 'master') {
         btnReset.style.display = '';
