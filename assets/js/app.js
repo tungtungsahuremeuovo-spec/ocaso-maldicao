@@ -1,13 +1,13 @@
 import { saveData, loadData } from '../../core/database/storage.js';
-import { notifySubscribers } from '../../core/state/state.js';
 
 const STORAGE_KEY = 'ocaso_maldicao_data';
 
 class AppState {
     constructor() {
+        this.role = localStorage.getItem('ocaso_role') || null; // 'master', 'player' ou null
         this.data = this.getDefaultData();
         this.subscribers = new Map();
-        this.load();
+        if (this.role) this.load(); // só carrega dados se já tiver papel definido
     }
 
     getDefaultData() {
@@ -21,7 +21,48 @@ class AppState {
             spells: [],
             domains: [],
             lores: [],
-            settings: { theme: 'default', autoSave: true, language: 'pt-BR', diceAnimation: true }
+            settings: { theme: 'default', autoSave: true, language: 'pt-BR', diceAnimation: true },
+            masterPassword: '1234' // senha padrão do mestre (pode ser alterada nas configs)
+        };
+    }
+
+    setRole(role) {
+        this.role = role;
+        localStorage.setItem('ocaso_role', role);
+    }
+
+    getRole() {
+        return this.role || localStorage.getItem('ocaso_role');
+    }
+
+    clearRole() {
+        localStorage.removeItem('ocaso_role');
+        this.role = null;
+    }
+
+    // Exporta apenas informações públicas para jogadores
+    exportPlayerPackage() {
+        return {
+            campaign: this.data.campaign,
+            characters: this.data.characters
+                .filter(c => c.isPlayerCharacter) // apenas personagens de jogadores
+                .map(c => ({
+                    nome: c.nome,
+                    classe: c.classe,
+                    estilo: c.estilo,
+                    grau: c.grau,
+                    hpMax: c.hpMax,
+                    hp: c.hp,
+                    eaMax: c.eaMax,
+                    ea: c.ea,
+                    pericias: c.pericias,
+                    cicatrizes: c.cicatrizes,
+                    ambicao: c.ambicao,
+                    notas: c.notas // inclui notas, mas o mestre decide o que colocar
+                })),
+            quests: this.data.quests
+                .filter(q => q.visivelJogadores)
+                .map(q => ({ titulo: q.titulo, desc: q.desc, status: q.status, recompensa: q.recompensa }))
         };
     }
 
@@ -49,11 +90,13 @@ class AppState {
     }
 
     save() {
-        saveData(STORAGE_KEY, this.data);
-        const indicator = document.getElementById('saveIndicator');
-        if (indicator) {
-            indicator.textContent = '💾 Salvo';
-            setTimeout(() => { if (indicator) indicator.textContent = ''; }, 1500);
+        if (this.role) {
+            saveData(STORAGE_KEY, this.data);
+            const indicator = document.getElementById('saveIndicator');
+            if (indicator) {
+                indicator.textContent = '💾 Salvo';
+                setTimeout(() => { if (indicator) indicator.textContent = ''; }, 1500);
+            }
         }
     }
 

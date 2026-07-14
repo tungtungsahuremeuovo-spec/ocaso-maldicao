@@ -10,9 +10,26 @@ export function init() {
 }
 
 function renderList() {
-    document.getElementById('questList').innerHTML = appState.get('quests').map(q => {
+    let quests = appState.get('quests');
+    // Filtrar visibilidade para jogadores
+    if (appState.getRole() === 'player') {
+        quests = quests.filter(q => q.visivelJogadores);
+    }
+    document.getElementById('questList').innerHTML = quests.map(q => {
         let tg = q.status === 'Concluída' ? 'green' : q.status === 'Falha' ? 'red' : '';
-        return `<div class="card-item"><div class="card-info"><div class="card-name">${escapeHtml(q.titulo)} <span class="tag ${tg}">${q.status}</span></div><div style="font-size:0.8rem;">${escapeHtml(q.desc).substring(0, 80)}</div><div style="font-size:0.75rem;">💰 ${escapeHtml(q.recompensa)}</div></div><div class="card-actions"><button class="btn btn-sm" onclick="_toggleQuest('${q.id}')">🔄</button><button class="btn btn-red btn-sm" onclick="_removeQuest('${q.id}')">🗑️</button></div></div>`;
+        // Botões de ação apenas para o mestre
+        const actions = appState.getRole() === 'master'
+            ? `<button class="btn btn-sm" onclick="_toggleQuest('${q.id}')">🔄</button>
+               <button class="btn btn-red btn-sm" onclick="_removeQuest('${q.id}')">🗑️</button>`
+            : '';
+        return `<div class="card-item">
+                  <div class="card-info">
+                    <div class="card-name">${escapeHtml(q.titulo)} <span class="tag ${tg}">${q.status}</span></div>
+                    <div style="font-size:0.8rem;">${escapeHtml(q.desc).substring(0, 80)}</div>
+                    <div style="font-size:0.75rem;">💰 ${escapeHtml(q.recompensa)}</div>
+                  </div>
+                  <div class="card-actions">${actions}</div>
+                </div>`;
     }).join('') || '<div class="empty-state">Nenhuma missão.</div>';
 }
 
@@ -20,10 +37,12 @@ function addQuest() {
     const titulo = document.getElementById('qTitulo').value.trim();
     if (!titulo) return window.showToast?.('⚠️ Título obrigatório');
     appState.set('quests', [...appState.get('quests'), {
-        id: generateId(), titulo,
+        id: generateId(),
+        titulo,
         desc: document.getElementById('qDesc').value,
         recompensa: document.getElementById('qRecompensa').value,
-        status: document.getElementById('qStatus').value
+        status: document.getElementById('qStatus').value,
+        visivelJogadores: true   // padrão: visível para jogadores
     }]);
     ['qTitulo', 'qDesc', 'qRecompensa'].forEach(id => document.getElementById(id).value = '');
     window.showToast?.('🏴 Missão adicionada!');

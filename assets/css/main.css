@@ -299,3 +299,61 @@ textarea { resize: vertical; min-height: 70px; }
 
 .empty-state { text-align: center; padding: 30px; color: var(--text-muted); font-style: italic; }
 .search-input { margin-bottom: 10px; }
+
+/* ===== NOVOS ESTILOS DO MENU DE SELEÇÃO DE PAPEL ===== */
+#menu-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: radial-gradient(ellipse at center, #1a1822, #0d0c11);
+}
+.menu-container {
+  text-align: center;
+  max-width: 600px;
+  padding: 40px;
+}
+.menu-title {
+  font-family: var(--font-title);
+  font-size: 2.8rem;
+  color: var(--gold);
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+.menu-sub {
+  color: var(--text-dim);
+  margin-bottom: 50px;
+  font-size: 1rem;
+}
+.menu-buttons {
+  display: flex;
+  gap: 30px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.menu-btn {
+  background: var(--bg-2);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 32px 28px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+  min-width: 240px;
+}
+.menu-btn:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+}
+.menu-btn .icon { font-size: 3rem; }
+.menu-btn span { font-size: 1.2rem; font-weight: 600; }
+.menu-btn small { font-size: 0.75rem; color: var(--text-muted); }
+.menu-btn.master-btn { border-color: var(--gold-dark); }
+.menu-btn.master-btn:hover { border-color: var(--gold); box-shadow: 0 0 24px rgba(201,162,78,0.3); }
+.menu-btn.player-btn { border-color: var(--purple); }
+.menu-btn.player-btn:hover { border-color: var(--purple-light); box-shadow: 0 0 24px rgba(123,79,160,0.3); }
+.menu-footer { margin-top: 50px; font-size: 0.75rem; color: var(--text-muted); }

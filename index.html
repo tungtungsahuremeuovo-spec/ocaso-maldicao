@@ -3,15 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Ocaso & Maldição - Gerenciador de Campanha de RPG baseado em Jujutsu Kaisen">
-    <meta name="theme-color" content="#0d0c11">
     <title>Ocaso & Maldição — Gerenciador de Campanha</title>
     <link rel="stylesheet" href="assets/css/main.css">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛩️</text></svg>">
 </head>
 <body>
-    <div id="app">
+    <!-- TELA DE MENU (aparece quando nenhum papel foi escolhido) -->
+    <div id="menu-screen">
+        <div class="menu-container">
+            <h1 class="menu-title">⛩️ Ocaso & Maldição</h1>
+            <p class="menu-sub">Gerenciador de Campanha — Escola Jujutsu de Kyoto</p>
+            <div class="menu-buttons">
+                <button id="btnMaster" class="menu-btn master-btn">
+                    <span class="icon">⚔️</span>
+                    <span>Criar / Gerenciar Campanha</span>
+                    <small>Modo Mestre</small>
+                </button>
+                <button id="btnPlayer" class="menu-btn player-btn">
+                    <span class="icon">🎭</span>
+                    <span>Entrar como Jogador</span>
+                    <small>Importar arquivo da campanha</small>
+                </button>
+            </div>
+            <p class="menu-footer">v3.1 — Criado por Sardinha</p>
+        </div>
+    </div>
+
+    <!-- APLICATIVO (escondido até escolher um papel) -->
+    <div id="app" style="display:none;">
         <nav id="sidebar" aria-label="Navegação principal">
             <div class="sidebar-header">
                 <span class="logo">⛩️</span>
@@ -24,13 +44,17 @@
             <div class="sidebar-footer">
                 <input id="campaignName" class="campaign-input" value="A Sombra do Dragão" aria-label="Nome da campanha">
                 <span id="saveIndicator">💾 Salvo</span>
+                <button id="btnLogout" class="btn btn-sm btn-red w-full mt-1" style="display:none;">↩️ Sair / Trocar Modo</button>
             </div>
         </nav>
         <main id="content" aria-live="polite">
             <div class="loading-screen">⛩️<br>Carregando o Grimório...</div>
         </main>
     </div>
+
     <div id="toastContainer" class="toast-container" aria-live="assertive"></div>
+    <input type="file" id="importFileInput" accept=".ocaso,.json" style="display:none">
+
     <script type="module" src="assets/js/bootstrap.js"></script>
 </body>
 </html>
