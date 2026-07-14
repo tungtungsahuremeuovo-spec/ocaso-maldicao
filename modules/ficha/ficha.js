@@ -1,7 +1,6 @@
 import appState from '../../assets/js/app.js';
 import { generateId, escapeHtml } from '../../core/utils/utils.js';
 
-// Arrays temporários para edição
 let periciasTemp = [];
 let cicatrizesTemp = [];
 
@@ -13,8 +12,6 @@ export function init() {
     document.getElementById('btnNewFicha').addEventListener('click', showCreateForm);
     document.getElementById('btnSaveFicha').addEventListener('click', saveCharacter);
     document.getElementById('btnCancelFicha').addEventListener('click', cancelEdit);
-
-    // Eventos para adicionar tags
     document.getElementById('btnAddPericia').addEventListener('click', () => addTag('pericia'));
     document.getElementById('btnAddCicatriz').addEventListener('click', () => addTag('cicatriz'));
     document.getElementById('fPericiaInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') addTag('pericia'); });
@@ -34,10 +31,8 @@ function renderFicha() {
     if (char) {
         const hpPct = (char.hp / char.hpMax) * 100;
         const eaPct = (char.ea / char.eaMax) * 100;
-        // Processa arrays de tags
         const pericias = (char.pericias || '').split(',').filter(Boolean).map(p => `<span class="tag">${escapeHtml(p.trim())}</span>`).join(' ') || 'Nenhuma';
         const cicatrizes = (char.cicatrizes || '').split(',').filter(Boolean).map(c => `<span class="tag red">${escapeHtml(c.trim())}</span>`).join(' ') || 'Nenhuma';
-        
         container.innerHTML = `
             <div class="card-item" style="flex-direction:column; align-items:flex-start;">
                 <h2>${escapeHtml(char.nome)} <span class="tag purple">${escapeHtml(char.estilo)}</span> <span class="tag">${char.grau}º Grau</span></h2>
@@ -56,7 +51,6 @@ function renderFicha() {
                 ${char.notas ? `<p style="margin-top:10px; font-style:italic;">📝 ${escapeHtml(char.notas)}</p>` : ''}
                 <button class="btn btn-sm mt-1" id="btnEditFicha">✏️ Editar</button>
             </div>`;
-        // Listener para o botão editar (criado dinamicamente)
         document.getElementById('btnEditFicha').addEventListener('click', () => {
             form.style.display = 'block';
             btnNew.style.display = 'none';
@@ -116,15 +110,21 @@ function addTag(type) {
     const input = document.getElementById(inputId);
     const value = input.value.trim();
     if (!value) return;
-    const arr = type === 'pericia' ? periciasTemp : cicatrizesTemp;
-    if (!arr.includes(value)) arr.push(value);
+    if (type === 'pericia') {
+        if (!periciasTemp.includes(value)) periciasTemp.push(value);
+    } else {
+        if (!cicatrizesTemp.includes(value)) cicatrizesTemp.push(value);
+    }
     input.value = '';
     renderTags(type);
 }
 
 function removeTag(type, index) {
-    const arr = type === 'pericia' ? periciasTemp : cicatrizesTemp;
-    arr.splice(index, 1);
+    if (type === 'pericia') {
+        periciasTemp.splice(index, 1);
+    } else {
+        cicatrizesTemp.splice(index, 1);
+    }
     renderTags(type);
 }
 
@@ -135,7 +135,6 @@ function renderTags(type) {
     container.innerHTML = arr.map((item, i) => 
         `<span class="tag ${type === 'cicatriz' ? 'red' : ''}">${escapeHtml(item)} <button type="button" class="tag-remove" data-type="${type}" data-index="${i}" style="background:none;border:none;color:inherit;cursor:pointer;font-weight:bold;margin-left:4px;">×</button></span>`
     ).join('');
-    // Adiciona listeners para os botões de remoção
     container.querySelectorAll('.tag-remove').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const t = e.target.dataset.type;
@@ -153,6 +152,7 @@ function saveCharacter() {
         id: existing ? existing.id : generateId(),
         nome,
         origem: document.getElementById('fOrigem').value,
+        classe: '',
         estilo: document.getElementById('fEstilo').value,
         grau: document.getElementById('fGrau').value,
         hpMax: +document.getElementById('fHpMax').value || 25,
@@ -165,7 +165,6 @@ function saveCharacter() {
         notas: document.getElementById('fNotas').value,
         isPlayerCharacter: true
     };
-    // Substitui ou adiciona o personagem do jogador
     const chars = appState.get('characters').filter(c => !c.isPlayerCharacter);
     chars.push(char);
     appState.set('characters', chars);

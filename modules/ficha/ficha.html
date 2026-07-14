@@ -3,51 +3,27 @@
     <div id="playerFicha">
         <p class="empty-state">Nenhum personagem criado.</p>
     </div>
-    <!-- Formulário de criação/edição -->
     <div id="fichaForm" style="display:none;" class="mt-2">
         <h3 id="formTitle">Criar Personagem</h3>
         <div class="flex-row">
             <input id="fNome" placeholder="Nome do personagem">
             <select id="fOrigem">
                 <option value="">Sem Origem Especial</option>
-                <option>Semi-Restringido</option>
-                <option>Meio-Maldição</option>
-                <option>Feiticeiro Reencarnado</option>
-                <option>Parasita Espiritual</option>
-                <option>Escolhido do Voto</option>
-                <option>Vaso Imperfeito</option>
-                <option>Restrição Sensorial</option>
-                <option>Herdeiro Amaldiçoado</option>
-                <option>Corpo Adaptativo</option>
-                <option>Filho de Domínio</option>
-                <option>Sobrevivente da Morte</option>
-                <option>Sangue Profano</option>
-                <option>Corpo Vazio</option>
-                <option>Fragmentado</option>
-                <option>Devorador</option>
-                <option>Gêmeo Espiritual</option>
-                <option>Restrição Invertida</option>
-                <option>Aberração Temporal</option>
-                <option>Nascido na Barreira</option>
-                <option>Monstro Artificial</option>
+                <option>Semi-Restringido</option><option>Meio-Maldição</option>
+                <option>Feiticeiro Reencarnado</option><option>Parasita Espiritual</option>
+                <option>Escolhido do Voto</option><option>Vaso Imperfeito</option>
+                <option>Restrição Sensorial</option><option>Herdeiro Amaldiçoado</option>
+                <option>Corpo Adaptativo</option><option>Filho de Domínio</option>
+                <option>Sobrevivente da Morte</option><option>Sangue Profano</option>
+                <option>Corpo Vazio</option><option>Fragmentado</option>
+                <option>Devorador</option><option>Gêmeo Espiritual</option>
+                <option>Restrição Invertida</option><option>Aberração Temporal</option>
+                <option>Nascido na Barreira</option><option>Monstro Artificial</option>
             </select>
         </div>
         <div class="flex-row mt-1">
-            <select id="fEstilo">
-                <option>Lutador</option>
-                <option>Especialista em Combate</option>
-                <option>Controlador</option>
-                <option>Suporte</option>
-                <option>Entoador</option>
-                <option>Restringido</option>
-            </select>
-            <select id="fGrau">
-                <option value="4">4º Grau</option>
-                <option value="3">3º Grau</option>
-                <option value="2">2º Grau</option>
-                <option value="1">1º Grau</option>
-                <option value="E">Especial</option>
-            </select>
+            <select id="fEstilo"><option>Lutador</option><option>Especialista em Combate</option><option>Controlador</option><option>Suporte</option><option>Entoador</option><option>Restringido</option></select>
+            <select id="fGrau"><option value="4">4º Grau</option><option value="3">3º Grau</option><option value="2">2º Grau</option><option value="1">1º Grau</option><option value="E">Especial</option></select>
         </div>
         <div class="flex-row mt-1">
             <div><label>HP Máx</label><input type="number" id="fHpMax" value="25"></div>
@@ -55,21 +31,18 @@
             <div><label>EA Máx</label><input type="number" id="fEaMax" value="30"></div>
             <div><label>EA Atual</label><input type="number" id="fEa" value="30"></div>
         </div>
-        <!-- Perícias dinâmicas -->
         <label class="mt-1">Perícias</label>
         <div class="flex-row">
             <input id="fPericiaInput" placeholder="Digite uma perícia">
             <button class="btn btn-sm" id="btnAddPericia">➕</button>
         </div>
         <div id="fPericiasTags" class="tags mt-1"></div>
-        <!-- Cicatrizes dinâmicas -->
         <label class="mt-1">Cicatrizes</label>
         <div class="flex-row">
             <input id="fCicatrizInput" placeholder="Digite uma cicatriz">
             <button class="btn btn-sm" id="btnAddCicatriz">➕</button>
         </div>
         <div id="fCicatrizesTags" class="tags mt-1"></div>
-        <!-- Ambição e Notas -->
         <label class="mt-1">Ambição</label>
         <input id="fAmbicao" placeholder="Sua ambição principal">
         <textarea class="mt-1" id="fNotas" rows="2" placeholder="Anotações"></textarea>
