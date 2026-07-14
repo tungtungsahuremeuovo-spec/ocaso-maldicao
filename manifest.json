@@ -1,0 +1,8 @@
+{
+  "name": "Ocaso & Maldição",
+  "short_name": "Ocaso",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#c9a24e",
+  "background_color": "#0d0c11"
+}

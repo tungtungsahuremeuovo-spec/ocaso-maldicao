@@ -1,116 +1,146 @@
+// assets/js/bootstrap.js
 import appState from './app.js';
-import { router } from '../../core/router/router.js';
-import { showToast } from '../../components/Toast/Toast.js';
 
-const MASTER_MODULES = [
-    { id: 'dashboard', label: '🏠 Painel' },
-    { id: 'personagens', label: '🧙 Personagens' },
-    { id: 'combate', label: '⚔️ Combate' },
-    { id: 'sessoes', label: '📖 Sessões' },
-    { id: 'missoes', label: '🏰 Missões' },
-    { id: 'inventario', label: '💎 Inventário' },
-    { id: 'grimorio', label: '📜 Grimório' },
-    { id: 'dominios', label: '🌌 Domínios' },
-    { id: 'lore', label: '📚 Lore' },
-    { id: 'configuracoes', label: '⚙️ Configurações' },
-];
-
-const PLAYER_MODULES = [
-    { id: 'ficha', label: '📋 Minha Ficha' },
-    { id: 'dados', label: '🎲 Dados' },
-    { id: 'missoes', label: '📜 Missões' },
-    { id: 'configuracoes', label: '⚙️ Configurações' },
-];
-
-function buildSidebar(modules) {
-    const nav = document.getElementById('sidebarNav');
-    nav.innerHTML = modules.map(m =>
-        `<a href="#${m.id}" data-module="${m.id}" class="nav-link">${m.label}</a>`
-    ).join('');
-    nav.addEventListener('click', (e) => {
-        const link = e.target.closest('a');
-        if (!link) return;
-        e.preventDefault();
-        const moduleId = link.dataset.module;
-        router.navigate(moduleId);
-        document.querySelectorAll('.nav-link').forEach(a => a.classList.remove('active'));
-        link.classList.add('active');
-    });
-}
-
-function setupCampaignName() {
-    const input = document.getElementById('campaignName');
-    if (!input) return;
-    input.value = appState.get('campaign');
-    input.addEventListener('input', () => {
-        appState.set('campaign', input.value.trim() || 'A Sombra do Dragão');
-    });
-}
-
-function setupLogoutButton() {
-    const btn = document.getElementById('btnLogout');
-    if (!btn) return;
-    btn.style.display = 'block';
-    btn.addEventListener('click', () => {
-        appState.clearRole();
-        location.reload();
-    });
-}
-
-async function initApp(role) {
-    document.getElementById('menu-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'flex';
-    setupLogoutButton();
-    window.showToast = showToast;
-
-    const modules = role === 'master' ? MASTER_MODULES : PLAYER_MODULES;
-    buildSidebar(modules);
-    setupCampaignName();
-
-    const hash = window.location.hash.slice(1) || modules[0].id;
-    await router.navigate(hash);
-    const activeLink = document.querySelector(`[data-module="${hash}"]`);
-    if (activeLink) activeLink.classList.add('active');
-
-    window.addEventListener('hashchange', async () => {
-        const moduleId = window.location.hash.slice(1) || modules[0].id;
-        await router.navigate(moduleId);
-        document.querySelectorAll('.nav-link').forEach(a => a.classList.remove('active'));
-        const link = document.querySelector(`[data-module="${moduleId}"]`);
-        if (link) link.classList.add('active');
-    });
-}
-
+// --- Configuração do Menu Inicial ---
 function setupMenuScreen() {
-    document.getElementById('menu-screen').style.display = 'flex';
-    document.getElementById('app').style.display = 'none';
+    const menuScreen = document.getElementById('menu-screen');
+    const appContainer = document.getElementById('app');
+    const btnMaster = document.getElementById('btnMaster');
+    const btnPlayer = document.getElementById('btnPlayer');
 
-    document.getElementById('btnMaster').addEventListener('click', () => {
+    // Se já tem papel salvo, pula o menu
+    if (appState.getRole()) {
+        menuScreen.style.display = 'none';
+        appContainer.style.display = 'flex';
+        initializeApp();
+        return;
+    }
+
+    // Mostra o menu
+    menuScreen.style.display = 'flex';
+    appContainer.style.display = 'none';
+
+    btnMaster.addEventListener('click', () => {
+        console.log('👑 Clicou em Mestre');
         appState.setRole('master');
         if (!localStorage.getItem('ocaso_data')) {
-            appState.saveLocallyAndSend();
+            appState.saveLocally();   // ✅ corrigido
         }
         location.reload();
     });
 
-    document.getElementById('btnPlayer').addEventListener('click', () => {
-        const peerId = prompt('Insira o ID da sala (fornecido pelo mestre):');
-        if (!peerId) return;
-        localStorage.setItem('ocaso_peerId', peerId.trim());
+    btnPlayer.addEventListener('click', () => {
+        console.log('🎭 Clicou em Jogador');
         appState.setRole('player');
-        appState.peerId = peerId.trim();
-        appState.connectToHost(peerId.trim());
-        location.reload();
+        const roomId = prompt('Digite o ID da sala fornecida pelo Mestre:');
+        if (roomId && roomId.trim()) {
+            appState.connectToHost(roomId.trim());
+            location.reload();
+        } else {
+            alert('ID da sala é obrigatório para entrar como jogador.');
+            appState.clearRole();
+        }
     });
 }
 
-async function init() {
+// --- Inicialização do App (quando já logado) ---
+function initializeApp() {
     const role = appState.getRole();
-    if (role === 'master' || role === 'player') {
-        await initApp(role);
-    } else {
-        setupMenuScreen();
+    console.log(`🎮 Inicializando como ${role}`);
+
+    loadSidebar(role);
+    loadDefaultContent(role);
+
+    const btnLogout = document.getElementById('btnLogout');
+    btnLogout.style.display = 'block';
+    btnLogout.addEventListener('click', () => {
+        appState.clearRole();
+        location.reload();
+    });
+
+    const campaignInput = document.getElementById('campaignName');
+    campaignInput.value = appState.get('campaign') || 'A Sombra do Dragão';
+    campaignInput.addEventListener('change', () => {
+        appState.set('campaign', campaignInput.value);
+    });
+}
+
+function loadSidebar(role) {
+    const nav = document.getElementById('sidebarNav');
+    const modules = [
+        { id: 'dashboard', label: '📊 Painel' },
+        { id: 'ficha', label: '📋 Ficha' },
+        { id: 'missoes', label: '🏴 Missões' },
+        { id: 'npcs', label: '👥 NPCs' },
+        { id: 'locais', label: '📍 Locais' },
+        { id: 'combate', label: '⚔️ Combate' },
+        { id: 'lore', label: '📜 Lore' },
+        { id: 'configuracoes', label: '⚙️ Configurações' },
+    ];
+
+    const visible = role === 'master'
+        ? modules
+        : modules.filter(m => ['ficha', 'missoes', 'combate', 'configuracoes'].includes(m.id));
+
+    nav.innerHTML = visible.map(m =>
+        `<a href="#" data-module="${m.id}" class="nav-link">${m.label}</a>`
+    ).join('');
+
+    nav.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const moduleId = link.dataset.module;
+            navigateTo(moduleId);
+            nav.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+        });
+    });
+
+    const first = nav.querySelector('.nav-link');
+    if (first) first.classList.add('active');
+}
+
+function loadDefaultContent(role) {
+    const content = document.getElementById('content');
+    content.innerHTML = '<div class="loading-screen">⛩️<br>Carregando...</div>';
+    navigateTo('dashboard');
+}
+
+// --- Navegação corrigida (caminhos absolutos a partir da raiz) ---
+async function navigateTo(moduleId) {
+    const content = document.getElementById('content');
+    try {
+        // Caminho correto: sobe dois níveis (de assets/js/ para raiz) e entra em modules/
+        const htmlResponse = await fetch(`../../modules/${moduleId}/${moduleId}.html`);
+        if (!htmlResponse.ok) throw new Error('HTML não encontrado');
+
+        const html = await htmlResponse.text();
+        content.innerHTML = html;
+
+        // Importa o módulo JS correspondente
+        const module = await import(`../../modules/${moduleId}/${moduleId}.js`);
+        if (module.init) {
+            module.init();
+        }
+    } catch (err) {
+        console.error('Erro ao carregar módulo:', err);
+        content.innerHTML = `<div class="empty-state">❌ Erro ao carregar "${moduleId}".</div>`;
     }
 }
 
-init();
+// --- Inicializa ---
+document.addEventListener('DOMContentLoaded', () => {
+    setupMenuScreen();
+});
+
+// --- Globais para uso em módulos (opcional) ---
+window.navigateTo = navigateTo;
+window.showToast = (msg) => {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast-item';
+    toast.textContent = msg;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+};
