@@ -1,6 +1,28 @@
 <div class="panel fade-in">
     <div class="panel-header">📋 Minha Ficha</div>
     <div id="playerFicha">
-        <p class="empty-state">Nenhum personagem importado.</p>
+        <p class="empty-state">Nenhum personagem criado.</p>
     </div>
+    <!-- Formulário de criação/edição (inicialmente oculto) -->
+    <div id="fichaForm" style="display:none;" class="mt-2">
+        <h3 id="formTitle">Criar Personagem</h3>
+        <div class="flex-row"><input id="fNome" placeholder="Nome"><input id="fClasse" placeholder="Classe"></div>
+        <div class="flex-row mt-1">
+            <select id="fEstilo"><option>Lutador</option><option>Especialista em Combate</option><option>Controlador</option><option>Suporte</option><option>Entoador</option><option>Restringido</option></select>
+            <select id="fGrau"><option value="4">4º Grau</option><option value="3">3º Grau</option><option value="2">2º Grau</option><option value="1">1º Grau</option><option value="E">Especial</option></select>
+        </div>
+        <div class="flex-row mt-1">
+            <div><label>HP Máx</label><input type="number" id="fHpMax" value="25"></div>
+            <div><label>HP Atual</label><input type="number" id="fHp" value="25"></div>
+            <div><label>EA Máx</label><input type="number" id="fEaMax" value="30"></div>
+            <div><label>EA Atual</label><input type="number" id="fEa" value="30"></div>
+        </div>
+        <input class="mt-1" id="fPericias" placeholder="Perícias">
+        <input class="mt-1" id="fCicatrizes" placeholder="Cicatrizes">
+        <input class="mt-1" id="fAmbicao" placeholder="Ambição">
+        <textarea class="mt-1" id="fNotas" rows="2" placeholder="Anotações"></textarea>
+        <button class="btn btn-gold w-full mt-2" id="btnSaveFicha">Salvar Ficha</button>
+        <button class="btn btn-red w-full mt-1" id="btnCancelFicha" style="display:none;">Cancelar</button>
+    </div>
+    <button class="btn btn-gold w-full mt-2" id="btnNewFicha" style="display:none;">➕ Criar Personagem</button>
 </div>
