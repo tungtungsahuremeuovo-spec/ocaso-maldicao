@@ -1,7 +1,37 @@
 // assets/js/bootstrap.js
 import appState from './app.js';
 
-// --- Obtém a URL base do projeto (raiz) a partir da localização deste script ---
+// ============================================================
+// 1. Módulos disponíveis por papel
+// ============================================================
+const MASTER_MODULES = [
+    { id: 'dashboard', label: '🏠 Painel' },
+    { id: 'personagens', label: '🧙 Personagens' },
+    { id: 'ficha', label: '📋 Ficha' },
+    { id: 'combate', label: '⚔️ Combate' },
+    { id: 'missoes', label: '🏴 Missões' },
+    { id: 'inventario', label: '💎 Inventário' },
+    { id: 'grimorio', label: '📜 Grimório' },
+    { id: 'dominios', label: '🌌 Domínios' },
+    { id: 'lore', label: '📚 Lore' },
+    { id: 'livro', label: '📖 Livro de Regras' },  // ✅ NOVO
+    { id: 'configuracoes', label: '⚙️ Configurações' },
+];
+
+const PLAYER_MODULES = [
+    { id: 'ficha', label: '📋 Minha Ficha' },
+    { id: 'dados', label: '🎲 Dados' },
+    { id: 'missoes', label: '📜 Missões' },
+    { id: 'combate', label: '⚔️ Combate' },
+    { id: 'livro', label: '📖 Livro de Regras' },   // ✅ NOVO
+    { id: 'configuracoes', label: '⚙️ Configurações' },
+];
+
+// ============================================================
+// 2. Funções auxiliares
+// ============================================================
+
+// Obtém a URL base do projeto (raiz) a partir da localização deste script
 function getBasePath() {
     // import.meta.url: "https://usuario.github.io/ocaso-maldicao/assets/js/bootstrap.js"
     const scriptUrl = import.meta.url;
@@ -9,7 +39,7 @@ function getBasePath() {
     return scriptUrl.substring(0, scriptUrl.lastIndexOf('/assets/js/')) + '/';
 }
 
-// --- Navegação robusta ---
+// Navegação robusta para carregar módulos
 async function navigateTo(moduleId) {
     const content = document.getElementById('content');
     if (!content) return;
@@ -37,7 +67,9 @@ async function navigateTo(moduleId) {
     }
 }
 
-// --- Configuração do Menu Inicial ---
+// ============================================================
+// 3. Configuração do Menu Inicial
+// ============================================================
 function setupMenuScreen() {
     const menuScreen = document.getElementById('menu-screen');
     const appContainer = document.getElementById('app');
@@ -77,6 +109,9 @@ function setupMenuScreen() {
     });
 }
 
+// ============================================================
+// 4. Inicialização do App
+// ============================================================
 function initializeApp() {
     const role = appState.getRole();
     console.log(`🎮 Inicializando como ${role}`);
@@ -104,24 +139,11 @@ function initializeApp() {
 function loadSidebar(role) {
     const nav = document.getElementById('sidebarNav');
     if (!nav) return;
-    const modules = [
-        { id: 'dashboard', label: '📊 Painel' },
-        { id: 'personagens', label: '🧙 Personagens' },
-        { id: 'ficha', label: '📋 Ficha' },
-        { id: 'combate', label: '⚔️ Combate' },
-        { id: 'missoes', label: '🏴 Missões' },
-        { id: 'inventario', label: '💎 Inventário' },
-        { id: 'grimorio', label: '📜 Grimório' },
-        { id: 'dominios', label: '🌌 Domínios' },
-        { id: 'lore', label: '📚 Lore' },
-        { id: 'configuracoes', label: '⚙️ Configurações' },
-    ];
 
-    const visible = role === 'master' ? modules : modules.filter(m =>
-        ['ficha', 'missoes', 'combate', 'configuracoes'].includes(m.id)
-    );
+    // Escolhe a lista de módulos conforme o papel
+    const modules = role === 'master' ? MASTER_MODULES : PLAYER_MODULES;
 
-    nav.innerHTML = visible.map(m =>
+    nav.innerHTML = modules.map(m =>
         `<a href="#" data-module="${m.id}" class="nav-link">${m.label}</a>`
     ).join('');
 
@@ -146,12 +168,13 @@ function loadDefaultContent(role) {
     navigateTo('dashboard');
 }
 
-// --- Inicializa ---
+// ============================================================
+// 5. Inicialização e globais
+// ============================================================
 document.addEventListener('DOMContentLoaded', () => {
     setupMenuScreen();
 });
 
-// --- Globais ---
 window.navigateTo = navigateTo;
 window.showToast = (msg) => {
     const container = document.getElementById('toastContainer');
