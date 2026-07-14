@@ -1,0 +1,36 @@
+<div class="grid-2 fade-in">
+    <div class="panel">
+        <div class="panel-header">➕ Novo Feiticeiro</div>
+        <div class="flex-row"><input id="cNome" placeholder="Nome do personagem"><input id="cClasse" placeholder="Classe"></div>
+        <div class="flex-row mt-1">
+            <select id="cEstilo"><option>Lutador</option><option>Especialista em Combate</option><option>Controlador</option><option>Suporte</option><option>Entoador</option><option>Restringido</option></select>
+            <select id="cGrau"><option value="4">4º Grau</option><option value="3">3º Grau</option><option value="2">2º Grau</option><option value="1">1º Grau</option><option value="E">Especial</option></select>
+        </div>
+        <div class="flex-row mt-1"><select id="cOrigem"><option value="">Sem Origem Especial</option><option>Semi-Restringido</option><option>Meio-Maldição</option><option>Feiticeiro Reencarnado</option><option>Parasita Espiritual</option><option>Escolhido do Voto</option><option>Vaso Imperfeito</option><option>Herdeiro Amaldiçoado</option><option>Corpo Adaptativo</option><option>Filho de Domínio</option><option>Sobrevivente da Morte</option><option>Sangue Profano</option><option>Corpo Vazio</option><option>Fragmentado</option><option>Devorador</option><option>Gêmeo Espiritual</option><option>Restrição Invertida</option><option>Aberração Temporal</option><option>Nascido na Barreira</option><option>Monstro Artificial</option></select></div>
+        <div class="flex-row mt-1">
+            <div><label>FOR</label><input type="number" id="cFOR" value="3" min="1" max="7"></div>
+            <div><label>DES</label><input type="number" id="cDES" value="3" min="1" max="7"></div>
+            <div><label>CON</label><input type="number" id="cCON" value="3" min="1" max="7"></div>
+            <div><label>INT</label><input type="number" id="cINT" value="3" min="1" max="5"></div>
+            <div><label>SAB</label><input type="number" id="cSAB" value="3" min="1" max="5"></div>
+            <div><label>PRE</label><input type="number" id="cPRE" value="3" min="1" max="5"></div>
+        </div>
+        <div class="flex-row mt-1">
+            <div><label>HP Máx</label><input type="number" id="cHpMax" value="25"></div>
+            <div><label>HP Atual</label><input type="number" id="cHp" value="25"></div>
+            <div><label>EA Máx</label><input type="number" id="cEaMax" value="30"></div>
+            <div><label>EA Atual</label><input type="number" id="cEa" value="30"></div>
+        </div>
+        <div class="flex-row mt-1"><input id="cTecnica" placeholder="Técnica Inata"><input id="cDanoBase" placeholder="Dano Base (ex: 1d6)"></div>
+        <input class="mt-1" id="cPericias" placeholder="Perícias treinadas (separadas por vírgula)">
+        <input class="mt-1" id="cCicatrizes" placeholder="Cicatrizes">
+        <input class="mt-1" id="cAmbicao" placeholder="Ambição">
+        <textarea class="mt-1" id="cNotas" rows="2" placeholder="Anotações, história..."></textarea>
+        <button class="btn btn-gold w-full mt-2" id="btnAddChar">➕ Adicionar Feiticeiro</button>
+    </div>
+    <div class="panel">
+        <div class="panel-header">📋 Feiticeiros <span class="badge" id="charCount">0</span></div>
+        <input class="search-input" id="charSearch" placeholder="🔍 Buscar..." oninput="window._renderChars()">
+        <div class="list-container" id="charList"><div class="empty-state">Nenhum feiticeiro registrado.</div></div>
+    </div>
+</div>

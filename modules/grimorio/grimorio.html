@@ -1,0 +1,14 @@
+<div class="grid-2 fade-in">
+    <div class="panel">
+        <div class="panel-header">📜 Criar Feitiço (Sistema de Pontos)</div>
+        <div class="flex-row"><input id="spNome" placeholder="Nome do Feitiço"><select id="spNivel"><option value="1">Nível 1 (5 pts)</option><option value="2">Nível 2 (10 pts)</option><option value="3">Nível 3 (15 pts)</option><option value="4">Nível 4 (20 pts)</option><option value="5">Nível 5 (25 pts)</option></select></div>
+        <label class="mt-1">Efeitos (cada efeito consome pontos)</label>
+        <div class="flex-row"><select id="spEff1"><option value="0">Nenhum</option><option value="3">Dano alvo único (3)</option><option value="4">Dano em área (4)</option><option value="2">Condição Leve (2)</option><option value="4">Condição Média (4)</option><option value="6">Condição Severa (6)</option><option value="2">Empurrão 3m (2)</option><option value="4">Cura 1d8+PRE (4)</option><option value="3">Buff +2 atributo (3)</option></select><select id="spEff2"><option value="0">Nenhum</option><option value="3">Dano alvo único (3)</option><option value="4">Dano em área (4)</option><option value="2">Condição Leve (2)</option><option value="4">Condição Média (4)</option><option value="6">Condição Severa (6)</option></select></div>
+        <div id="spPoints" style="font-size:0.8rem;color:var(--text-dim);margin-top:6px;">Orçamento: 5 pontos</div>
+        <button class="btn btn-gold w-full mt-2" id="btnAddSpell">📜 Criar Feitiço</button>
+    </div>
+    <div class="panel">
+        <div class="panel-header">📖 Grimório</div>
+        <div class="list-container" id="spellList"><div class="empty-state">Nenhum feitiço.</div></div>
+    </div>
+</div>

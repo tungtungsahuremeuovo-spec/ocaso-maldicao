@@ -1,0 +1,34 @@
+{
+    "app": {
+        "title": "Ocaso & Maldição",
+        "subtitle": "Gerenciador de Campanha",
+        "school": "Escola Jujutsu de Kyoto"
+    },
+    "modules": {
+        "dashboard": "Painel",
+        "personagens": "Personagens",
+        "combate": "Combate",
+        "sessoes": "Sessões",
+        "missoes": "Missões",
+        "inventario": "Inventário",
+        "grimorio": "Grimório",
+        "dominios": "Domínios",
+        "lore": "Lore",
+        "configuracoes": "Configurações"
+    },
+    "actions": {
+        "add": "Adicionar",
+        "remove": "Remover",
+        "save": "Salvar",
+        "export": "Exportar",
+        "import": "Importar",
+        "reset": "Resetar"
+    },
+    "combat": {
+        "initiative": "Iniciativa",
+        "nextTurn": "Próximo Turno",
+        "blackFlash": "Black Flash",
+        "jackpot": "Jackpot",
+        "luckPoints": "Pontos de Sorte"
+    }
+}

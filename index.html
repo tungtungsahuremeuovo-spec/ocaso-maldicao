@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Ocaso & Maldição - Gerenciador de Campanha de RPG baseado em Jujutsu Kaisen">
+    <meta name="theme-color" content="#0d0c11">
+    <title>Ocaso & Maldição — Gerenciador de Campanha</title>
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛩️</text></svg>">
+</head>
+<body>
+    <div id="app">
+        <nav id="sidebar" aria-label="Navegação principal">
+            <div class="sidebar-header">
+                <span class="logo">⛩️</span>
+                <div>
+                    <h1>Ocaso & Maldição</h1>
+                    <small>Escola Jujutsu de Kyoto</small>
+                </div>
+            </div>
+            <div class="sidebar-nav" id="sidebarNav"></div>
+            <div class="sidebar-footer">
+                <input id="campaignName" class="campaign-input" value="A Sombra do Dragão" aria-label="Nome da campanha">
+                <span id="saveIndicator">💾 Salvo</span>
+            </div>
+        </nav>
+        <main id="content" aria-live="polite">
+            <div class="loading-screen">⛩️<br>Carregando o Grimório...</div>
+        </main>
+    </div>
+    <div id="toastContainer" class="toast-container" aria-live="assertive"></div>
+    <script type="module" src="assets/js/bootstrap.js"></script>
+</body>
+</html>
