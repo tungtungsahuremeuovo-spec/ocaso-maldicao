@@ -15,36 +15,47 @@
             <button class="tab-btn" data-ftab="tecnica">⚡ Técnica & Feitiços</button>
             <button class="tab-btn" data-ftab="inventario">🎒 Inventário</button>
             <button class="tab-btn" data-ftab="dominio">🌌 Domínio</button>
+            <button class="tab-btn" data-ftab="aliados">🤝 Aliados</button>
+            <button class="tab-btn" data-ftab="historico">📜 Histórico</button>
         </div>
 
         <!-- ABA 1 – BÁSICO -->
         <div id="ftab-basico" class="ftab-content active">
             <div class="flex-row">
-                <input id="fNome" placeholder="Nome do personagem">
-                <select id="fOrigem">
-                    <option value="">Sem Origem Especial</option>
-                    <option>Semi-Restringido</option>
-                    <option>Meio-Maldição</option>
-                    <option>Feiticeiro Reencarnado</option>
-                    <option>Parasita Espiritual</option>
-                    <option>Escolhido do Voto</option>
-                    <option>Vaso Imperfeito</option>
-                    <option>Restrição Sensorial</option>
-                    <option>Herdeiro Amaldiçoado</option>
-                    <option>Corpo Adaptativo</option>
-                    <option>Filho de Domínio</option>
-                    <option>Sobrevivente da Morte</option>
-                    <option>Sangue Profano</option>
-                    <option>Corpo Vazio</option>
-                    <option>Fragmentado</option>
-                    <option>Devorador</option>
-                    <option>Gêmeo Espiritual</option>
-                    <option>Restrição Invertida</option>
-                    <option>Aberração Temporal</option>
-                    <option>Nascido na Barreira</option>
-                    <option>Monstro Artificial</option>
-                </select>
+                <div style="flex:1;">
+                    <input id="fNome" placeholder="Nome do personagem">
+                    <select id="fOrigem" class="mt-1">
+                        <option value="">Sem Origem Especial</option>
+                        <option>Semi-Restringido</option>
+                        <option>Meio-Maldição</option>
+                        <option>Feiticeiro Reencarnado</option>
+                        <option>Parasita Espiritual</option>
+                        <option>Escolhido do Voto</option>
+                        <option>Vaso Imperfeito</option>
+                        <option>Restrição Sensorial</option>
+                        <option>Herdeiro Amaldiçoado</option>
+                        <option>Corpo Adaptativo</option>
+                        <option>Filho de Domínio</option>
+                        <option>Sobrevivente da Morte</option>
+                        <option>Sangue Profano</option>
+                        <option>Corpo Vazio</option>
+                        <option>Fragmentado</option>
+                        <option>Devorador</option>
+                        <option>Gêmeo Espiritual</option>
+                        <option>Restrição Invertida</option>
+                        <option>Aberração Temporal</option>
+                        <option>Nascido na Barreira</option>
+                        <option>Monstro Artificial</option>
+                    </select>
+                </div>
+                <div style="flex:1; text-align:center;">
+                    <label>Avatar</label>
+                    <input type="file" id="fAvatar" accept="image/*" style="display:none;">
+                    <img id="fAvatarPreview" style="max-width:100px; max-height:100px; border-radius:8px; cursor:pointer; border:2px dashed var(--border);" src="" title="Clique para escolher uma imagem">
+                    <button class="btn btn-sm mt-1" id="btnRemoveAvatar" style="display:none;">🗑️ Remover</button>
+                </div>
             </div>
+
             <div class="flex-row mt-1">
                 <select id="fEstilo">
                     <option>Lutador</option>
@@ -61,12 +72,25 @@
                     <option value="1">1º Grau</option>
                     <option value="E">Especial</option>
                 </select>
+                <select id="fStatus">
+                    <option value="na_escola">🏫 Na Escola</option>
+                    <option value="em_missao">⚔️ Em Missão</option>
+                    <option value="ferido">🏥 Ferido</option>
+                    <option value="ausente">❓ Ausente</option>
+                </select>
             </div>
+
             <div class="flex-row mt-1">
                 <div><label>HP Máx</label><input type="number" id="fHpMax" value="25"></div>
                 <div><label>HP Atual</label><input type="number" id="fHp" value="25"></div>
                 <div><label>EA Máx</label><input type="number" id="fEaMax" value="30"></div>
                 <div><label>EA Atual</label><input type="number" id="fEa" value="30"></div>
+                <div><label>Fôlego</label><input type="number" id="fFolego" value="30" disabled></div>
+            </div>
+
+            <div class="flex-row mt-1">
+                <div><label>Exaustão (0-5)</label><input type="number" id="fExaustao" value="0" min="0" max="5"></div>
+                <div><label>Nível de Poder</label><input type="number" id="fNivelPoder" value="1" min="1" max="10"></div>
             </div>
 
             <label class="mt-1">Perícias</label>
@@ -85,6 +109,10 @@
 
             <label class="mt-1">Ambição</label>
             <input id="fAmbicao" placeholder="Sua ambição principal">
+
+            <label class="mt-1">Medos e Fraquezas</label>
+            <input id="fMedos" placeholder="O que seu personagem teme?">
+
             <textarea class="mt-1" id="fNotas" rows="2" placeholder="Anotações gerais"></textarea>
         </div>
 
@@ -92,12 +120,19 @@
         <div id="ftab-lore" class="ftab-content" style="display:none;">
             <label>História / Antecedentes</label>
             <textarea id="fLore" rows="6" placeholder="Conte a história do seu personagem..."></textarea>
+
+            <label class="mt-1">Aparência</label>
+            <textarea id="fAparencia" rows="3" placeholder="Descreva a aparência do personagem..."></textarea>
+
+            <label class="mt-1">Clã / Patrono</label>
+            <input id="fCla" placeholder="Nome do clã ou patrono">
         </div>
 
         <!-- ABA 3 – TÉCNICA & FEITIÇOS -->
         <div id="ftab-tecnica" class="ftab-content" style="display:none;">
             <label>Técnica Inata</label>
             <input id="fTecnica" placeholder="Nome e descrição da sua técnica">
+
             <label class="mt-1">Feitiços</label>
             <div class="flex-row">
                 <input id="fFeiticoNome" placeholder="Nome do feitiço" style="flex:1;">
@@ -105,6 +140,14 @@
             </div>
             <button class="btn btn-sm mt-1" id="btnAddFeitico">➕ Adicionar Feitiço</button>
             <div id="fFeiticosTags" class="tags mt-1"></div>
+
+            <label class="mt-1">Votos Vinculativos</label>
+            <div class="flex-row">
+                <input id="fVotoNome" placeholder="Nome do Voto" style="flex:1;">
+                <input id="fVotoDesc" placeholder="Descrição" style="flex:2;">
+            </div>
+            <button class="btn btn-sm mt-1" id="btnAddVoto">➕ Adicionar Voto</button>
+            <div id="fVotosTags" class="tags mt-1"></div>
         </div>
 
         <!-- ABA 4 – INVENTÁRIO -->
@@ -125,9 +168,29 @@
             <textarea id="fDominioDesc" class="mt-1" rows="4" placeholder="Regra, condição e gimmick..."></textarea>
         </div>
 
+        <!-- ABA 6 – ALIADOS -->
+        <div id="ftab-aliados" class="ftab-content" style="display:none;">
+            <label>Aliados e Contatos</label>
+            <div class="flex-row">
+                <input id="fAliadoNome" placeholder="Nome do aliado" style="flex:1;">
+                <input id="fAliadoRelacao" placeholder="Relação (ex: Mentor)" style="flex:1;">
+            </div>
+            <button class="btn btn-sm mt-1" id="btnAddAliado">➕ Adicionar Aliado</button>
+            <div id="fAliadosTags" class="tags mt-1"></div>
+        </div>
+
+        <!-- ABA 7 – HISTÓRICO -->
+        <div id="ftab-historico" class="ftab-content" style="display:none;">
+            <label>Histórico de Alterações</label>
+            <div id="fHistoricoList" style="max-height:300px; overflow-y:auto; font-size:0.8rem; background:var(--bg-2); padding:8px; border-radius:4px;">
+                <p class="empty-state">Nenhuma alteração registrada.</p>
+            </div>
+        </div>
+
         <button class="btn btn-gold w-full mt-3" id="btnSaveFicha">Salvar Ficha</button>
         <button class="btn btn-red w-full mt-1" id="btnCancelFicha" style="display:none;">Cancelar</button>
     </div>
 
     <button class="btn btn-gold w-full mt-2" id="btnNewFicha" style="display:none;">➕ Criar Personagem</button>
+    <button class="btn w-full mt-1" id="btnExportPDF" style="display:none;">📄 Exportar como PDF</button>
 </div>
