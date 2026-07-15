@@ -1,4 +1,9 @@
 <div class="panel fade-in" style="display:flex; flex-direction:column; height:85vh;">
     <div class="panel-header">📖 Livro de Regras — Ocaso & Maldição v3.1</div>
-    <embed src="../../assets/pdf/livro.pdf" type="application/pdf" width="100%" height="100%" style="flex:1; border:none; border-radius:8px;">
+    <embed id="pdfEmbed" src="" type="application/pdf" width="100%" height="100%" style="flex:1; border:none; border-radius:8px;">
+    <div id="pdfFallback" style="display:none; text-align:center; padding:40px; color:var(--text-dim);">
+        <p>⚠️ Não foi possível carregar o PDF.</p>
+        <p>Verifique se o arquivo <strong>assets/pdf/livro.pdf</strong> existe.</p>
+        <button class="btn btn-gold mt-2" onclick="location.reload()">🔄 Tentar novamente</button>
+    </div>
 </div>
