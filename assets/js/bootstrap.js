@@ -15,11 +15,14 @@ const MASTER_MODULES = [
     { id: 'dominios', label: '🌌 Domínios' },
     { id: 'lore', label: '📚 Lore' },
     { id: 'livro', label: '📖 Livro de Regras' },
-    // ✅ NOVOS MÓDULOS ADICIONADOS
     { id: 'calendario', label: '📅 Calendário' },
     { id: 'chat', label: '💬 Chat' },
     { id: 'faccoes', label: '🏛️ Facções' },
     { id: 'diario', label: '📖 Diário' },
+    // ✅ NOVOS MÓDULOS
+    { id: 'mapa', label: '🗺️ Mapa' },
+    { id: 'ferramentas', label: '🛠️ Ferramentas' },
+    { id: 'sala', label: '🚪 Sala' },
     { id: 'configuracoes', label: '⚙️ Configurações' },
 ];
 
@@ -29,11 +32,13 @@ const PLAYER_MODULES = [
     { id: 'missoes', label: '📜 Missões' },
     { id: 'combate', label: '⚔️ Combate' },
     { id: 'livro', label: '📖 Livro de Regras' },
-    // ✅ NOVOS MÓDULOS ADICIONADOS
     { id: 'calendario', label: '📅 Calendário' },
     { id: 'chat', label: '💬 Chat' },
     { id: 'faccoes', label: '🏛️ Facções' },
     { id: 'diario', label: '📖 Diário' },
+    // ✅ NOVOS MÓDULOS
+    { id: 'mapa', label: '🗺️ Mapa' },
+    { id: 'sala', label: '🚪 Sala' },
     { id: 'configuracoes', label: '⚙️ Configurações' },
 ];
 
@@ -41,13 +46,11 @@ const PLAYER_MODULES = [
 // 2. Funções auxiliares
 // ============================================================
 
-// Obtém a URL base do projeto (raiz) a partir da localização deste script
 function getBasePath() {
     const scriptUrl = import.meta.url;
     return scriptUrl.substring(0, scriptUrl.lastIndexOf('/assets/js/')) + '/';
 }
 
-// Navegação robusta para carregar módulos
 async function navigateTo(moduleId) {
     const content = document.getElementById('content');
     if (!content) return;
@@ -83,6 +86,7 @@ function setupMenuScreen() {
     const appContainer = document.getElementById('app');
     const btnMaster = document.getElementById('btnMaster');
     const btnPlayer = document.getElementById('btnPlayer');
+    const btnEspectador = document.getElementById('btnEspectador');
 
     if (appState.getRole()) {
         menuScreen.style.display = 'none';
@@ -115,6 +119,22 @@ function setupMenuScreen() {
             appState.clearRole();
         }
     });
+
+    // ✅ Botão Espectador
+    if (btnEspectador) {
+        btnEspectador.addEventListener('click', () => {
+            console.log('👀 Clicou em Espectador');
+            appState.setRole('spectator');
+            const roomId = prompt('Digite o ID da sala para observar:');
+            if (roomId && roomId.trim()) {
+                appState.connectToHost(roomId.trim());
+                location.reload();
+            } else {
+                alert('ID da sala é obrigatório para observar.');
+                appState.clearRole();
+            }
+        });
+    }
 }
 
 // ============================================================
@@ -148,7 +168,10 @@ function loadSidebar(role) {
     const nav = document.getElementById('sidebarNav');
     if (!nav) return;
 
-    const modules = role === 'master' ? MASTER_MODULES : PLAYER_MODULES;
+    const modules = role === 'master' ? MASTER_MODULES : 
+                    role === 'player' ? PLAYER_MODULES : 
+                    // Espectador vê os mesmos módulos que jogador, mas sem ações
+                    PLAYER_MODULES;
 
     nav.innerHTML = modules.map(m =>
         `<a href="#" data-module="${m.id}" class="nav-link">${m.label}</a>`

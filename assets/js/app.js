@@ -17,6 +17,8 @@ class AppState {
             }
         } else if (this.role === 'player' && this.hostId) {
             this.connectToHost(this.hostId);
+        } else if (this.role === 'spectator' && this.hostId) {
+            this.connectToHost(this.hostId); // Espectador também se conecta
         }
     }
 
@@ -31,7 +33,8 @@ class AppState {
             spells: [],
             domains: [],
             lores: [],
-            settings: { theme: 'default', autoSave: true, language: 'pt-BR' }
+            settings: { theme: 'default', autoSave: true, language: 'pt-BR' },
+            sessionStatus: 'waiting' // waiting, playing, paused
         };
     }
 
@@ -74,7 +77,21 @@ class AppState {
                 conn.send({ type: 'fullSync', data: this.data });
             });
             conn.on('data', (received) => {
-                // Processar mensagens do jogador (ex: chat)
+                // Processar mensagens do jogador
+                if (received.type === 'rollRequest') {
+                    if (window.showToast) {
+                        window.showToast(`📨 ${received.player} pede rolagem de ${received.skill} (CD ${received.difficulty})`);
+                    }
+                    // O mestre pode responder com um roll (exemplo)
+                    // const roll = Math.floor(Math.random() * 20) + 1;
+                    // conn.send({ type: 'rollResponse', skill: received.skill, difficulty: received.difficulty, roll, approved: true });
+                }
+                if (received.type === 'chat') {
+                    // já tratado no chat.js
+                }
+                if (received.type === 'notification') {
+                    // já tratado
+                }
             });
         });
     }
@@ -140,6 +157,18 @@ class AppState {
                 if (msg.type === 'chat') {
                     window._handleChatMessage?.(msg);
                 }
+                if (msg.type === 'rollResponse') {
+                    // Recebe resposta do mestre para um pedido de rolagem
+                    const sucesso = msg.roll >= msg.difficulty;
+                    const el = document.getElementById('rollRequestResult');
+                    if (el) {
+                        el.innerHTML = `🎲 ${msg.skill}: ${msg.roll} (${sucesso ? '✅ Sucesso' : '❌ Falha'})`;
+                    }
+                    window.showToast?.(`📨 ${msg.skill}: ${msg.roll} (${sucesso ? 'Sucesso' : 'Falha'})`);
+                }
+                if (msg.type === 'rollRequest') {
+                    // Jogador recebe notificação? (opcional)
+                }
             });
         });
         this.peer.on('error', (err) => {
@@ -153,6 +182,11 @@ class AppState {
     get(domain) { return this.data[domain]; }
 
     set(domain, value) {
+        // Espectador não pode modificar dados
+        if (this.role === 'spectator') {
+            console.warn('Espectador não pode modificar dados.');
+            return;
+        }
         this.data[domain] = value;
         if (this.role === 'master') {
             this.saveLocally();
@@ -181,6 +215,7 @@ class AppState {
     }
 
     reset() {
+        if (this.role === 'spectator') return;
         this.data = this.getDefaultData();
         if (!this.data.campaignLog) this.data.campaignLog = [];
         if (this.role === 'master') {
@@ -198,9 +233,10 @@ class AppState {
         if (this.role === 'master') {
             this.saveLocally();
             this.broadcastUpdate();
-        } else {
+        } else if (this.role === 'player') {
             localStorage.setItem('ocaso_playerData', JSON.stringify(this.data));
         }
+        // Espectador não loga
     }
 
     enviarNotificacao(mensagem) {
