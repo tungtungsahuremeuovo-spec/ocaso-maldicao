@@ -2,11 +2,14 @@
 class AppState {
     constructor() {
         this.role = localStorage.getItem('ocaso_role') || null;
-        this.hostId = localStorage.getItem('ocaso_hostId') || null; // ID do mestre
+        this.hostId = localStorage.getItem('ocaso_hostId') || null;
         this.peer = null;
         this.connection = null;
         this.data = this.getDefaultData();
         this.subscribers = new Map();
+
+        // ✅ GARANTE QUE CAMPAIGN_LOG EXISTA
+        if (!this.data.campaignLog) this.data.campaignLog = [];
 
         if (this.role === 'master') {
             this.loadLocal();
@@ -30,9 +33,11 @@ class AppState {
             domains: [],
             lores: [],
             settings: { theme: 'default', autoSave: true, language: 'pt-BR' }
+            // campaignLog será adicionado dinamicamente no construtor
         };
     }
 
+    // ---- Papel ----
     setRole(role) {
         this.role = role;
         localStorage.setItem('ocaso_role', role);
@@ -47,18 +52,21 @@ class AppState {
         this.destroyOnlineRoom();
     }
 
-    // ---- Persistência local do mestre ----
+    // ---- Persistência ----
     saveLocally() {
         localStorage.setItem('ocaso_data', JSON.stringify(this.data));
     }
     loadLocal() {
         const saved = localStorage.getItem('ocaso_data');
-        if (saved) this.data = { ...this.getDefaultData(), ...JSON.parse(saved) };
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            this.data = { ...this.getDefaultData(), ...parsed };
+            // Garante que campaignLog exista após carregar
+            if (!this.data.campaignLog) this.data.campaignLog = [];
+        }
     }
 
-    // ---- Lógica P2P ----
-
-    // Mestre: inicia o host com um ID fixo (ou gera um novo)
+    // ---- P2P (Mestre) ----
     startHosting(id) {
         if (this.peer) this.destroyOnlineRoom();
         this.peer = new Peer(id);
@@ -72,16 +80,15 @@ class AppState {
                 conn.send({ type: 'fullSync', data: this.data });
             });
             conn.on('data', (received) => {
-                // Opcional: processar mensagens do jogador
+                // Processar mensagens do jogador, se necessário
             });
         });
     }
 
-    // Mestre: cria uma nova sala e retorna o ID
     async createOnlineRoom() {
         return new Promise((resolve) => {
             if (this.peer) this.destroyOnlineRoom();
-            this.peer = new Peer(); // ID aleatório
+            this.peer = new Peer();
             this.peer.on('open', (id) => {
                 this.hostId = id;
                 localStorage.setItem('ocaso_hostId', id);
@@ -91,7 +98,7 @@ class AppState {
                         conn.send({ type: 'fullSync', data: this.data });
                     });
                     conn.on('data', (msg) => {
-                        // Opcional: lidar com mensagens do jogador
+                        // Lidar com mensagens do jogador
                     });
                 });
                 resolve(id);
@@ -103,7 +110,6 @@ class AppState {
         });
     }
 
-    // Mestre: destrói a sala
     destroyOnlineRoom() {
         if (this.connection) {
             this.connection.close();
@@ -117,14 +123,13 @@ class AppState {
         this.hostId = null;
     }
 
-    // Mestre: envia dados atualizados para o jogador conectado
     broadcastUpdate() {
         if (this.connection && this.connection.open) {
             this.connection.send({ type: 'update', data: this.data });
         }
     }
 
-    // Jogador: conecta ao mestre
+    // ---- Jogador ----
     connectToHost(hostId) {
         this.peer = new Peer();
         this.peer.on('open', (myId) => {
@@ -135,6 +140,7 @@ class AppState {
             this.connection.on('data', (msg) => {
                 if (msg.type === 'fullSync' || msg.type === 'update') {
                     this.data = { ...this.getDefaultData(), ...msg.data };
+                    if (!this.data.campaignLog) this.data.campaignLog = [];
                     this.notifyAll();
                 }
             });
@@ -180,6 +186,7 @@ class AppState {
 
     reset() {
         this.data = this.getDefaultData();
+        if (!this.data.campaignLog) this.data.campaignLog = [];
         if (this.role === 'master') {
             this.saveLocally();
             this.broadcastUpdate();
@@ -187,7 +194,28 @@ class AppState {
         this.notifyAll();
     }
 
-    // Exporta pacote do jogador (apenas dados visíveis)
+    // ============================================================
+    // 🆕 MÉTODO LOGACTION
+    // ============================================================
+    logAction(message) {
+        const entry = {
+            timestamp: Date.now(),
+            message: message
+        };
+        if (!this.data.campaignLog) this.data.campaignLog = [];
+        this.data.campaignLog.push(entry);
+        this.notify('campaignLog');
+        // Persiste e sincroniza (apenas para mestre)
+        if (this.role === 'master') {
+            this.saveLocally();
+            this.broadcastUpdate();
+        } else {
+            // Jogador também pode salvar localmente, se quiser
+            localStorage.setItem('ocaso_playerData', JSON.stringify(this.data));
+        }
+    }
+
+    // ---- Exportação do pacote do jogador ----
     exportPlayerPackage() {
         return {
             campaign: this.data.campaign,

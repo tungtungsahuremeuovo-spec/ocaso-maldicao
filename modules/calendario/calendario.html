@@ -1,0 +1,14 @@
+<div class="panel fade-in">
+    <div class="panel-header">📅 Calendário Escolar de Kyoto</div>
+    <div class="flex-row" style="align-items:center; gap:10px; margin-bottom:12px;">
+        <button class="btn btn-sm" id="btnPrevMes">◀</button>
+        <span id="calendarioMesAno" style="font-weight:bold; font-size:1.1rem;"></span>
+        <button class="btn btn-sm" id="btnNextMes">▶</button>
+        <button class="btn btn-sm btn-gold" id="btnHoje">Hoje</button>
+    </div>
+    <div id="calendarioGrid" style="display:grid; grid-template-columns: repeat(7, 1fr); gap:4px; text-align:center;"></div>
+    <div id="eventoDia" class="mt-2" style="font-size:0.9rem; color:var(--gold-light);"></div>
+    <div style="margin-top:12px; font-size:0.8rem; color:var(--text-dim);">
+        <strong>Efeitos do clima:</strong> <span id="climaAtual">🌤️ Nenhum</span>
+    </div>
+</div>

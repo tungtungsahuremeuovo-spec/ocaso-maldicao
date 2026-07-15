@@ -14,7 +14,12 @@ const MASTER_MODULES = [
     { id: 'grimorio', label: '📜 Grimório' },
     { id: 'dominios', label: '🌌 Domínios' },
     { id: 'lore', label: '📚 Lore' },
-    { id: 'livro', label: '📖 Livro de Regras' },  // ✅ NOVO
+    { id: 'livro', label: '📖 Livro de Regras' },
+    // ✅ NOVOS MÓDULOS ADICIONADOS
+    { id: 'calendario', label: '📅 Calendário' },
+    { id: 'chat', label: '💬 Chat' },
+    { id: 'faccoes', label: '🏛️ Facções' },
+    { id: 'diario', label: '📖 Diário' },
     { id: 'configuracoes', label: '⚙️ Configurações' },
 ];
 
@@ -23,7 +28,12 @@ const PLAYER_MODULES = [
     { id: 'dados', label: '🎲 Dados' },
     { id: 'missoes', label: '📜 Missões' },
     { id: 'combate', label: '⚔️ Combate' },
-    { id: 'livro', label: '📖 Livro de Regras' },   // ✅ NOVO
+    { id: 'livro', label: '📖 Livro de Regras' },
+    // ✅ NOVOS MÓDULOS ADICIONADOS
+    { id: 'calendario', label: '📅 Calendário' },
+    { id: 'chat', label: '💬 Chat' },
+    { id: 'faccoes', label: '🏛️ Facções' },
+    { id: 'diario', label: '📖 Diário' },
     { id: 'configuracoes', label: '⚙️ Configurações' },
 ];
 
@@ -33,9 +43,7 @@ const PLAYER_MODULES = [
 
 // Obtém a URL base do projeto (raiz) a partir da localização deste script
 function getBasePath() {
-    // import.meta.url: "https://usuario.github.io/ocaso-maldicao/assets/js/bootstrap.js"
     const scriptUrl = import.meta.url;
-    // Remove "assets/js/bootstrap.js" para chegar na raiz
     return scriptUrl.substring(0, scriptUrl.lastIndexOf('/assets/js/')) + '/';
 }
 
@@ -46,7 +54,7 @@ async function navigateTo(moduleId) {
 
     const basePath = getBasePath();
     const htmlUrl = `${basePath}modules/${moduleId}/${moduleId}.html`;
-    const jsPath = `../../modules/${moduleId}/${moduleId}.js`; // relativo a assets/js/
+    const jsPath = `../../modules/${moduleId}/${moduleId}.js`;
 
     console.log(`📂 Módulo: ${moduleId}`);
     console.log(`   Base: ${basePath}`);
@@ -140,7 +148,6 @@ function loadSidebar(role) {
     const nav = document.getElementById('sidebarNav');
     if (!nav) return;
 
-    // Escolhe a lista de módulos conforme o papel
     const modules = role === 'master' ? MASTER_MODULES : PLAYER_MODULES;
 
     nav.innerHTML = modules.map(m =>

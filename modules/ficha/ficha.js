@@ -457,6 +457,10 @@ async function saveCharacter() {
     const chars = appState.get('characters').filter(c => !c.isPlayerCharacter);
     chars.push(newChar);
     appState.set('characters', chars);
+
+    // ✅ LOG – adicionado aqui
+    appState.logAction(`📋 Personagem "${nome}" ${existing ? 'atualizado' : 'criado'}.`);
+
     window.showToast?.('✅ Personagem salvo!');
     document.getElementById('fichaForm').style.display = 'none';
     document.getElementById('btnNewFicha').style.display = 'none';

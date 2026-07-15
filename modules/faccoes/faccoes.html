@@ -1,0 +1,14 @@
+<div class="panel fade-in">
+    <div class="panel-header">🏛️ Facções e Reputação</div>
+    <div id="faccoesList" class="list-container"></div>
+    <button class="btn btn-gold w-full mt-2" id="btnAddFaccao" style="display:none;">➕ Nova Facção</button>
+    <!-- Modal simples para adicionar facção -->
+    <div id="modalFaccao" style="display:none; background:var(--bg-1); padding:16px; border-radius:8px; margin-top:10px;">
+        <input id="faccaoNome" placeholder="Nome da facção">
+        <textarea id="faccaoDesc" class="mt-1" rows="2" placeholder="Descrição"></textarea>
+        <div class="flex-row mt-1">
+            <select id="faccaoAfinidade"><option value="0">0 - Neutro</option><option value="1">1</option><option value="2">2</option><option value="3">3 - Aliado</option><option value="4">4 - Amigo</option><option value="5">5 - Vínculo</option></select>
+            <button class="btn btn-gold" id="btnSalvarFaccao">Salvar</button>
+        </div>
+    </div>
+</div>

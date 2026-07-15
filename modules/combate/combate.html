@@ -1,31 +1,71 @@
-<div class="grid-2 fade-in">
-    <div class="panel">
-        <div class="panel-header">⚔️ Adicionar Combatente</div>
-        <div class="flex-row"><input id="combNome" placeholder="Nome"><input type="number" id="combInic" value="10" placeholder="Iniciativa"></div>
-        <div class="flex-row mt-1"><input type="number" id="combHp" value="30" placeholder="HP"><input type="number" id="combHpMax" value="30" placeholder="HP Máx"></div>
-        <div class="mt-2" style="display:flex;gap:8px;">
-            <button class="btn btn-gold" id="btnAddCombat">➕ Adicionar</button>
-            <button class="btn" id="btnRollAll">🎲 Rolar d20</button>
-        </div>
-        <div class="dice-area mt-2">
-            <span style="font-size:0.75rem;color:var(--text-dim);">Dados rápidos:</span>
-            <button class="dice-btn" onclick="window._quickRoll(4)">d4</button><button class="dice-btn" onclick="window._quickRoll(6)">d6</button>
-            <button class="dice-btn" onclick="window._quickRoll(8)">d8</button><button class="dice-btn" onclick="window._quickRoll(10)">d10</button>
-            <button class="dice-btn" onclick="window._quickRoll(12)">d12</button><button class="dice-btn" onclick="window._quickRoll(20)">d20</button>
-        </div>
-        <div id="quickResult" style="margin-top:8px;color:var(--gold-light);font-weight:600;display:none;"></div>
+<div class="panel fade-in">
+    <div class="panel-header">⚔️ Combate</div>
+
+    <!-- Bloco de condições (novo) -->
+    <div class="mt-2" style="font-size:0.85rem;">
+        <strong>Aplicar Condição:</strong>
+        <select id="condTipo">
+            <option>Caído</option>
+            <option>Enfraquecido</option>
+            <option>Surdo</option>
+            <option>Sangramento Leve</option>
+            <option>Enredado</option>
+            <option>Cego</option>
+            <option>Silenciado</option>
+            <option>Queimando</option>
+            <option>Desbalanceado</option>
+            <option>Atordoado</option>
+            <option>Imóvel</option>
+            <option>Paralisado</option>
+        </select>
+        <input type="number" id="condDuracao" value="1" min="1" style="width:60px;" placeholder="Rodadas">
+        <button class="btn btn-sm" id="btnAplicarCond">Aplicar</button>
     </div>
-    <div class="panel">
-        <div class="panel-header">🔄 Ordem de Iniciativa <span id="turnIndicator" style="color:var(--gold-light);font-size:0.8rem;"></span></div>
-        <div class="list-container" id="initList"><div class="empty-state">Adicione combatentes.</div></div>
-        <div class="mt-2" style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn btn-gold btn-sm" id="btnNextTurn">▶️ Próximo Turno</button>
-            <button class="btn btn-sm" id="btnBlackFlash">⚡ Black Flash</button>
-            <button class="btn btn-red btn-sm" id="btnClearCombat">🗑️ Limpar</button>
+
+    <div class="grid-2 fade-in">
+        <div class="panel">
+            <div class="panel-header">⚔️ Adicionar Combatente</div>
+            <div class="flex-row">
+                <input id="combNome" placeholder="Nome">
+                <input type="number" id="combInic" value="10" placeholder="Iniciativa">
+            </div>
+            <div class="flex-row mt-1">
+                <input type="number" id="combHp" value="30" placeholder="HP">
+                <input type="number" id="combHpMax" value="30" placeholder="HP Máx">
+            </div>
+            <div class="mt-2" style="display:flex;gap:8px;">
+                <button class="btn btn-gold" id="btnAddCombat">➕ Adicionar</button>
+                <button class="btn" id="btnRollAll">🎲 Rolar d20</button>
+            </div>
+            <div class="dice-area mt-2">
+                <span style="font-size:0.75rem;color:var(--text-dim);">Dados rápidos:</span>
+                <button class="dice-btn" onclick="window._quickRoll(4)">d4</button>
+                <button class="dice-btn" onclick="window._quickRoll(6)">d6</button>
+                <button class="dice-btn" onclick="window._quickRoll(8)">d8</button>
+                <button class="dice-btn" onclick="window._quickRoll(10)">d10</button>
+                <button class="dice-btn" onclick="window._quickRoll(12)">d12</button>
+                <button class="dice-btn" onclick="window._quickRoll(20)">d20</button>
+            </div>
+            <div id="quickResult" style="margin-top:8px;color:var(--gold-light);font-weight:600;display:none;"></div>
         </div>
-        <div id="bfResult" style="margin-top:6px;font-size:0.8rem;color:var(--gold-light);"></div>
-        <div style="margin-top:10px;font-size:0.75rem;color:var(--text-dim);">
-            🎰 Pontos de Sorte: <strong id="luckPoints">0</strong> | Jackpot: <strong id="jackpotStatus">Disponível</strong>
+
+        <div class="panel">
+            <div class="panel-header">
+                🔄 Ordem de Iniciativa
+                <span id="turnIndicator" style="color:var(--gold-light);font-size:0.8rem;"></span>
+            </div>
+            <div class="list-container" id="initList">
+                <div class="empty-state">Adicione combatentes.</div>
+            </div>
+            <div class="mt-2" style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-gold btn-sm" id="btnNextTurn">▶️ Próximo Turno</button>
+                <button class="btn btn-sm" id="btnBlackFlash">⚡ Black Flash</button>
+                <button class="btn btn-red btn-sm" id="btnClearCombat">🗑️ Limpar</button>
+            </div>
+            <div id="bfResult" style="margin-top:6px;font-size:0.8rem;color:var(--gold-light);"></div>
+            <div style="margin-top:10px;font-size:0.75rem;color:var(--text-dim);">
+                🎰 Pontos de Sorte: <strong id="luckPoints">0</strong> | Jackpot: <strong id="jackpotStatus">Disponível</strong>
+            </div>
         </div>
     </div>
 </div>
