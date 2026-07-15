@@ -23,7 +23,11 @@
         <div id="ftab-basico" class="ftab-content active">
             <div class="flex-row">
                 <div style="flex:1;">
-                    <input id="fNome" placeholder="Nome do personagem">
+                    <!-- CAMPO NOME COM BOTÃO GERAR -->
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <input id="fNome" placeholder="Nome do personagem" style="flex:1;">
+                        <button class="btn btn-sm" id="btnGerarNome" title="Gerar nome japonês aleatório">🎲</button>
+                    </div>
                     <select id="fOrigem" class="mt-1">
                         <option value="">Sem Origem Especial</option>
                         <option>Semi-Restringido</option>
@@ -193,4 +197,6 @@
 
     <button class="btn btn-gold w-full mt-2" id="btnNewFicha" style="display:none;">➕ Criar Personagem</button>
     <button class="btn w-full mt-1" id="btnExportPDF" style="display:none;">📄 Exportar como PDF</button>
+    <button class="btn w-full mt-1" id="btnExportFicha" style="display:none;">📤 Exportar Minha Ficha</button>
+    <button class="btn w-full mt-1" id="btnImportFicha" style="display:none;">📥 Importar Ficha</button>
 </div>

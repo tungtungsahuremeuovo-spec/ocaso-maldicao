@@ -1,3 +1,4 @@
+// modules/chat/chat.js
 import appState from '../../assets/js/app.js';
 
 export function init() {
@@ -6,7 +7,12 @@ export function init() {
         if (e.key === 'Enter') enviarMensagem();
     });
 
-    // Ouvir mensagens recebidas
+    window._handleChatMessage = (msg) => {
+        if (msg.type === 'chat') {
+            adicionarMensagem(msg.autor, msg.texto, msg.timestamp);
+        }
+    };
+
     if (appState.connection) {
         appState.connection.on('data', (msg) => {
             if (msg.type === 'chat') {
@@ -14,12 +20,14 @@ export function init() {
             }
         });
     }
-    // Também ouvir do host
     if (appState.peer && appState.getRole() === 'master') {
         appState.peer.on('connection', (conn) => {
             conn.on('data', (msg) => {
                 if (msg.type === 'chat') {
                     adicionarMensagem(msg.autor, msg.texto, msg.timestamp);
+                    if (appState.connection && appState.connection.open) {
+                        appState.connection.send(msg);
+                    }
                 }
             });
         });
@@ -32,7 +40,7 @@ function enviarMensagem() {
     if (!texto) return;
     const msg = {
         type: 'chat',
-        autor: appState.getRole() === 'master' ? 'Mestre' : 'Jogador',
+        autor: appState.getRole() === 'master' ? '👑 Mestre' : '🎮 Jogador',
         texto,
         timestamp: Date.now()
     };

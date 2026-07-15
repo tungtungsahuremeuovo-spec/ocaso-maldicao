@@ -6,29 +6,30 @@ import { generateId, escapeHtml } from '../../core/utils/utils.js';
 
 let combatEngine;
 
+function getPlayerCharacter() {
+    return appState.get('characters').find(c => c.isPlayerCharacter) || null;
+}
+
 export function init() {
     combatEngine = new CombatEngine(appState);
 
-    // Eventos principais
     document.getElementById('btnAddCombat').addEventListener('click', addCombatant);
     document.getElementById('btnRollAll').addEventListener('click', rollAll);
     document.getElementById('btnNextTurn').addEventListener('click', nextTurn);
     document.getElementById('btnBlackFlash').addEventListener('click', attemptBF);
     document.getElementById('btnClearCombat').addEventListener('click', clearCombat);
     document.getElementById('btnAplicarCond').addEventListener('click', aplicarCondicao);
+    document.getElementById('btnResistDesesperada').addEventListener('click', resistenciaDesesperada);
 
-    // Globais para uso no HTML (onclick)
     window._quickRoll = quickRoll;
     window._updateCombHp = updateCombHp;
     window._removeComb = removeCombatant;
+    window._aplicarDano = aplicarDano;
 
     renderList();
     appState.subscribe('combat', renderList);
 }
 
-// ============================================================
-// RENDERIZAÇÃO
-// ============================================================
 function renderList() {
     const combat = appState.get('combat');
     if (!combat) return;
@@ -49,7 +50,6 @@ function renderList() {
         const hpPct = (c.hp / c.hpMax) * 100;
         const cls = hpPct < 30 ? 'red' : hpPct < 60 ? 'gold' : 'green';
 
-        // Condições do combatente
         const conds = (c.condicoes || []).map(cond =>
             `<span class="tag red">${escapeHtml(cond.nome)} (${cond.restante})</span>`
         ).join(' ');
@@ -71,9 +71,6 @@ function renderList() {
     }).join('');
 }
 
-// ============================================================
-// AÇÕES DO COMBATE
-// ============================================================
 function addCombatant() {
     const nome = document.getElementById('combNome').value.trim();
     if (!nome) return window.showToast?.('⚠️ Nome obrigatório');
@@ -88,6 +85,7 @@ function addCombatant() {
 
     document.getElementById('combNome').value = '';
     window.showToast?.('⚔️ Combatente adicionado!');
+    appState.enviarNotificacao(`⚔️ ${nome} entrou em combate.`);
 }
 
 function rollAll() {
@@ -98,8 +96,21 @@ function rollAll() {
 function nextTurn() {
     const current = combatEngine.nextTurn();
     if (current) {
+        const combat = appState.get('combat');
+        combat.combatants.forEach(c => {
+            if (c.condicoes && c.condicoes.length) {
+                c.condicoes = c.condicoes.filter(cond => {
+                    cond.restante--;
+                    return cond.restante > 0;
+                });
+            }
+            c.fluxoAtivo = false;
+        });
+        appState.set('combat', combat);
         window.showToast?.(`▶️ Turno de: ${current.nome}`);
-        // Decrementa condições (feito dentro do engine)
+        appState.enviarNotificacao(`▶️ Turno de ${current.nome}.`);
+    } else {
+        window.showToast?.('⚠️ Nenhum combatente ativo.');
     }
 }
 
@@ -112,6 +123,17 @@ function attemptBF() {
         if (result.jackpotTriggered) {
             window.showToast?.('🎰 JACKPOT! Inspiração Lendária concedida!');
         }
+
+        const char = getPlayerCharacter();
+        if (char) {
+            char.blackFlashCount = (char.blackFlashCount || 0) + 1;
+            char.fluxoAtivo = true;
+            const chars = appState.get('characters').filter(c => !c.isPlayerCharacter);
+            chars.push(char);
+            appState.set('characters', chars);
+            appState.logAction(`⚡ Black Flash de ${char.nome}! Fluxo ativado.`);
+            appState.enviarNotificacao(`⚡ Black Flash de ${char.nome}!`);
+        }
     }
 }
 
@@ -119,12 +141,10 @@ function clearCombat() {
     if (confirm('🗑️ Limpar todos os combatentes?')) {
         combatEngine.clearCombat();
         window.showToast?.('🗑️ Combate limpo.');
+        appState.enviarNotificacao('🗑️ Combate foi limpo pelo mestre.');
     }
 }
 
-// ============================================================
-// CONDIÇÕES
-// ============================================================
 function aplicarCondicao() {
     const combat = appState.get('combat');
     if (!combat || !combat.combatants.length) {
@@ -142,11 +162,53 @@ function aplicarCondicao() {
 
     appState.set('combat', combat);
     window.showToast?.(`🧪 ${alvo.nome} recebeu ${tipo} (${duracao} rodadas)`);
+    appState.enviarNotificacao(`🧪 ${alvo.nome} recebeu ${tipo} por ${duracao} rodadas.`);
 }
 
-// ============================================================
-// UTILIDADES (onclick)
-// ============================================================
+function resistenciaDesesperada() {
+    const combat = appState.get('combat');
+    if (!combat || !combat.combatants.length) {
+        return window.showToast?.('⚠️ Nenhum combatente em combate.');
+    }
+
+    const alvo = combat.combatants[combat.turnIndex];
+    if (!alvo) return window.showToast?.('⚠️ Nenhum combatente ativo.');
+
+    if (alvo.ea < 5) {
+        return window.showToast?.('⚠️ EA insuficiente (mínimo 5).');
+    }
+
+    alvo.ea -= 5;
+    const pre = alvo.PRE || alvo.presenca || 0;
+    const roll = Math.floor(Math.random() * 20) + 1 + pre;
+    const cd = 15;
+    const sucesso = roll >= cd;
+
+    window.showToast?.(`💪 Resistência Desesperada: ${roll} (${sucesso ? '✅ Sucesso!' : '❌ Falha'})`);
+    appState.logAction(`💪 ${alvo.nome} usou Resistência Desesperada: ${roll} (${sucesso ? 'Sucesso' : 'Falha'})`);
+    appState.enviarNotificacao(`💪 ${alvo.nome} usou Resistência Desesperada!`);
+
+    appState.set('combat', combat);
+}
+
+function aplicarDano(id, dano) {
+    const modoTreino = document.getElementById('modoTreino').checked;
+    const combat = appState.get('combat');
+    const alvo = combat.combatants.find(c => c.id === id);
+    if (!alvo) return;
+
+    if (modoTreino) {
+        window.showToast?.(`🥊 Modo treino: ${alvo.nome} receberia ${dano} de dano.`);
+        return;
+    }
+
+    alvo.hp = Math.max(0, alvo.hp - dano);
+    appState.set('combat', combat);
+    window.showToast?.(`💥 ${alvo.nome} sofreu ${dano} de dano.`);
+    appState.logAction(`💥 ${alvo.nome} sofreu ${dano} de dano.`);
+    renderList();
+}
+
 function updateCombHp(id, newVal) {
     combatEngine.updateHp(id, parseInt(newVal));
 }

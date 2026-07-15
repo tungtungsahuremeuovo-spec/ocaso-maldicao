@@ -1,3 +1,4 @@
+// modules/missoes/missoes.js
 import appState from '../../assets/js/app.js';
 import { generateId, escapeHtml } from '../../core/utils/utils.js';
 
@@ -44,6 +45,8 @@ function addQuest() {
         status: document.getElementById('qStatus').value,
         visivelJogadores: document.getElementById('qVisivel').checked
     }]);
+    appState.logAction(`🏴 Missão "${titulo}" criada.`);
+    appState.enviarNotificacao(`🏴 Mestre criou a missão "${titulo}".`);
     ['qTitulo', 'qDesc', 'qRecompensa'].forEach(id => document.getElementById(id).value = '');
     window.showToast?.('🏴 Missão adicionada!');
 }
@@ -58,9 +61,19 @@ function toggleQuest(id) {
         return q;
     });
     appState.set('quests', quests);
+    const quest = quests.find(q => q.id === id);
+    if (quest) {
+        appState.logAction(`🏴 Missão "${quest.titulo}" alterada para "${quest.status}".`);
+        appState.enviarNotificacao(`🏴 Missão "${quest.titulo}" está "${quest.status}".`);
+    }
 }
 
 function removeQuest(id) {
     if (appState.getRole() !== 'master') return;
+    const quest = appState.get('quests').find(q => q.id === id);
     appState.set('quests', appState.get('quests').filter(q => q.id !== id));
+    if (quest) {
+        appState.logAction(`🏴 Missão "${quest.titulo}" removida.`);
+        appState.enviarNotificacao(`🏴 Missão "${quest.titulo}" foi removida.`);
+    }
 }

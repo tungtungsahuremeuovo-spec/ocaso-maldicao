@@ -1,6 +1,7 @@
 // modules/ficha/ficha.js
 import appState from '../../assets/js/app.js';
 import { generateId, escapeHtml } from '../../core/utils/utils.js';
+import { gerarNome } from '../../core/data/nomes.js';
 
 let periciasTemp = [];
 let cicatrizesTemp = [];
@@ -26,6 +27,18 @@ export function init() {
     document.getElementById('btnAddVoto').addEventListener('click', addVoto);
     document.getElementById('btnExportPDF').addEventListener('click', exportPDF);
     document.getElementById('btnRemoveAvatar').addEventListener('click', removeAvatar);
+    document.getElementById('btnExportFicha').addEventListener('click', exportarFicha);
+    document.getElementById('btnImportFicha').addEventListener('click', importarFicha);
+
+    // Gerador de nome
+    document.getElementById('btnGerarNome').addEventListener('click', () => {
+        const nome = gerarNome();
+        document.getElementById('fNome').value = nome;
+        window.showToast?.('🎲 Nome gerado: ' + nome);
+    });
+
+    // Sugestão automática de PV/BT conforme Grau
+    document.getElementById('fGrau').addEventListener('change', atualizarStatsPorGrau);
 
     // Avatar
     const avatarInput = document.getElementById('fAvatar');
@@ -55,6 +68,24 @@ export function init() {
             btn.classList.add('active');
         });
     });
+}
+
+// Sugestão automática de PV/BT conforme Grau
+function atualizarStatsPorGrau() {
+    const grau = document.getElementById('fGrau').value;
+    const stats = {
+        '4': { pv: 25, ea: 30, dano: '1d6', bt: 1 },
+        '3': { pv: 35, ea: 45, dano: '1d8', bt: 2 },
+        '2': { pv: 50, ea: 60, dano: '1d10', bt: 3 },
+        '1': { pv: 70, ea: 80, dano: '1d12', bt: 4 },
+        'E': { pv: 100, ea: 110, dano: '2d8', bt: 4 }
+    };
+    const s = stats[grau] || stats['4'];
+    document.getElementById('fHpMax').value = s.pv;
+    document.getElementById('fEaMax').value = s.ea;
+    document.getElementById('fHp').value = s.pv;
+    document.getElementById('fEa').value = s.ea;
+    window.showToast?.(`📊 Grau ${grau}: PV ${s.pv}, EA ${s.ea}, BT +${s.bt}`);
 }
 
 function updateFolegoVisibility() {
@@ -96,7 +127,9 @@ function renderFicha() {
     const char = getPlayerCharacter();
     const btnNew = document.getElementById('btnNewFicha');
     const form = document.getElementById('fichaForm');
-    const btnExport = document.getElementById('btnExportPDF');
+    const btnExportPDF = document.getElementById('btnExportPDF');
+    const btnExportFicha = document.getElementById('btnExportFicha');
+    const btnImportFicha = document.getElementById('btnImportFicha');
 
     if (char) {
         const hpPct = (char.hp / char.hpMax) * 100;
@@ -137,6 +170,8 @@ function renderFicha() {
                 <p><strong>Domínio:</strong> ${char.dominio?.nome ? `<strong>${escapeHtml(char.dominio.nome)}</strong>: ${escapeHtml(char.dominio.desc)}` : 'Não definido'}</p>
                 <p><strong>Medos:</strong> ${escapeHtml(char.medos || 'Nenhum')}</p>
                 <p><strong>Nível de Poder:</strong> ${char.nivelPoder || 1}</p>
+                <p><strong>⚡ Black Flashes:</strong> ${char.blackFlashCount || 0}</p>
+                <p><strong>🌀 Estado de Fluxo:</strong> ${char.fluxoAtivo ? 'Ativo' : 'Inativo'}</p>
                 ${char.notas ? `<p style="margin-top:10px; font-style:italic;">📝 ${escapeHtml(char.notas)}</p>` : ''}
                 <button class="btn btn-sm mt-1" id="btnEditFicha">✏️ Editar</button>
             </div>`;
@@ -147,12 +182,16 @@ function renderFicha() {
         });
         btnNew.style.display = 'none';
         form.style.display = 'none';
-        btnExport.style.display = '';
+        btnExportPDF.style.display = '';
+        btnExportFicha.style.display = '';
+        btnImportFicha.style.display = '';
     } else {
         container.innerHTML = '<p class="empty-state">Nenhum personagem criado.</p>';
         btnNew.style.display = 'block';
         form.style.display = 'none';
-        btnExport.style.display = 'none';
+        btnExportPDF.style.display = 'none';
+        btnExportFicha.style.display = 'none';
+        btnImportFicha.style.display = 'none';
     }
 }
 
@@ -236,7 +275,6 @@ function clearForm() {
 
 // ========== TAGS ==========
 
-// Texto simples (perícias, cicatrizes)
 function addTextTag(type) {
     const input = document.getElementById(type === 'pericia' ? 'fPericiaInput' : 'fCicatrizInput');
     const val = input.value.trim();
@@ -256,7 +294,6 @@ function renderTextTags(type) {
     ).join('');
 }
 
-// Feitiços
 function addFeitico() {
     const nome = document.getElementById('fFeiticoNome').value.trim();
     const desc = document.getElementById('fFeiticoDesc').value.trim();
@@ -274,7 +311,6 @@ function renderFeiticosTags() {
     ).join('');
 }
 
-// Itens
 function addItem() {
     const nome = document.getElementById('fItemNome').value.trim();
     const desc = document.getElementById('fItemDesc').value.trim();
@@ -292,7 +328,6 @@ function renderItensTags() {
     ).join('');
 }
 
-// Aliados
 function addAliado() {
     const nome = document.getElementById('fAliadoNome').value.trim();
     const relacao = document.getElementById('fAliadoRelacao').value.trim();
@@ -310,7 +345,6 @@ function renderAliadosTags() {
     ).join('');
 }
 
-// Votos
 function addVoto() {
     const nome = document.getElementById('fVotoNome').value.trim();
     const desc = document.getElementById('fVotoDesc').value.trim();
@@ -328,7 +362,6 @@ function renderVotosTags() {
     ).join('');
 }
 
-// Renderização unificada e remoção
 function renderAllTags() {
     renderTextTags('pericia');
     renderTextTags('cicatriz');
@@ -376,10 +409,30 @@ function renderHistorico(char) {
     }).join('');
 }
 
+// ========== VALIDAÇÃO DE ATRIBUTOS ==========
+function validarAtributos() {
+    const forca = +document.getElementById('fForca')?.value || 0;
+    const destreza = +document.getElementById('fDestreza')?.value || 0;
+    const constituicao = +document.getElementById('fConstituicao')?.value || 0;
+    const inteligencia = +document.getElementById('fInteligencia')?.value || 0;
+    const sabedoria = +document.getElementById('fSabedoria')?.value || 0;
+    const presenca = +document.getElementById('fPresenca')?.value || 0;
+    const total = forca + destreza + constituicao + inteligencia + sabedoria + presenca;
+    const limite = document.getElementById('fEstilo').value === 'Restringido' ? 7 : 5;
+    if (total > limite) {
+        window.showToast?.(`⚠️ Soma de atributos (${total}) excede o limite (${limite})`);
+        return false;
+    }
+    return true;
+}
+
 // ========== SALVAR ==========
 async function saveCharacter() {
     const nome = document.getElementById('fNome').value.trim();
     if (!nome) return window.showToast?.('⚠️ Nome obrigatório');
+
+    if (!validarAtributos()) return;
+
     const existing = getPlayerCharacter();
 
     const newChar = {
@@ -415,10 +468,11 @@ async function saveCharacter() {
         },
         avatar: avatarBase64 || '',
         isPlayerCharacter: true,
-        history: existing ? [...(existing.history || [])] : []
+        history: existing ? [...(existing.history || [])] : [],
+        blackFlashCount: existing?.blackFlashCount || 0,
+        fluxoAtivo: existing?.fluxoAtivo || false
     };
 
-    // Registra alterações no histórico
     if (existing) {
         const changes = [];
         const fieldsToCompare = [
@@ -433,7 +487,6 @@ async function saveCharacter() {
                 changes.push({ field, old: oldVal || '(vazio)', new: newVal || '(vazio)' });
             }
         });
-        // Compara arrays complexos
         if (JSON.stringify(existing.feiticos) !== JSON.stringify(newChar.feiticos)) {
             changes.push({ field: 'feiticos', old: `${(existing.feiticos||[]).length} feitiços`, new: `${newChar.feiticos.length} feitiços` });
         }
@@ -458,8 +511,9 @@ async function saveCharacter() {
     chars.push(newChar);
     appState.set('characters', chars);
 
-    // ✅ LOG – adicionado aqui
+    // ✅ LOG e NOTIFICAÇÃO
     appState.logAction(`📋 Personagem "${nome}" ${existing ? 'atualizado' : 'criado'}.`);
+    appState.enviarNotificacao(`📋 Mestre atualizou a ficha de "${nome}".`);
 
     window.showToast?.('✅ Personagem salvo!');
     document.getElementById('fichaForm').style.display = 'none';
@@ -501,4 +555,49 @@ function exportPDF() {
     printWindow.focus();
     printWindow.print();
     printWindow.close();
+}
+
+// ========== IMPORTAR / EXPORTAR FICHA (JSON) ==========
+function exportarFicha() {
+    const char = getPlayerCharacter();
+    if (!char) return;
+    const data = JSON.stringify(char, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ficha_${char.nome.replace(/\s+/g, '_')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    window.showToast?.('📤 Ficha exportada!');
+    appState.logAction(`📤 Ficha de "${char.nome}" exportada.`);
+    appState.enviarNotificacao(`📤 Ficha de "${char.nome}" exportada.`);
+}
+
+function importarFicha() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            try {
+                const imported = JSON.parse(ev.target.result);
+                if (confirm(`Importar ficha de ${imported.nome}? Isso substituirá seu personagem atual.`)) {
+                    imported.isPlayerCharacter = true;
+                    const chars = appState.get('characters').filter(c => !c.isPlayerCharacter);
+                    chars.push(imported);
+                    appState.set('characters', chars);
+                    window.showToast?.('✅ Ficha importada!');
+                    appState.logAction(`📥 Ficha de "${imported.nome}" importada.`);
+                    appState.enviarNotificacao(`📥 Ficha de "${imported.nome}" importada.`);
+                }
+            } catch (err) {
+                window.showToast?.('❌ Arquivo inválido.');
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
 }
