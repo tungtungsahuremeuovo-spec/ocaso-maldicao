@@ -5,6 +5,7 @@ import DiceEngine from '../../core/engine/diceEngine.js';
 import { generateId, escapeHtml } from '../../core/utils/utils.js';
 
 let combatEngine;
+let historico = []; // array de {rodada, acoes: [{nome, acao}]}
 
 function getPlayerCharacter() {
     return appState.get('characters').find(c => c.isPlayerCharacter) || null;
@@ -13,6 +14,11 @@ function getPlayerCharacter() {
 export function init() {
     combatEngine = new CombatEngine(appState);
 
+    // Carrega histórico salvo
+    const saved = appState.get('combat');
+    if (saved && saved.historico) historico = saved.historico;
+    renderHistorico();
+
     document.getElementById('btnAddCombat').addEventListener('click', addCombatant);
     document.getElementById('btnRollAll').addEventListener('click', rollAll);
     document.getElementById('btnNextTurn').addEventListener('click', nextTurn);
@@ -20,16 +26,23 @@ export function init() {
     document.getElementById('btnClearCombat').addEventListener('click', clearCombat);
     document.getElementById('btnAplicarCond').addEventListener('click', aplicarCondicao);
     document.getElementById('btnResistDesesperada').addEventListener('click', resistenciaDesesperada);
+    document.getElementById('btnFugir').addEventListener('click', fugirCombate);
+    document.getElementById('btnExportCombate').addEventListener('click', exportarCombate);
+    document.getElementById('btnImportCombate').addEventListener('click', importarCombate);
 
     window._quickRoll = quickRoll;
     window._updateCombHp = updateCombHp;
     window._removeComb = removeCombatant;
     window._aplicarDano = aplicarDano;
+    window._editIniciativa = editIniciativa;
 
     renderList();
     appState.subscribe('combat', renderList);
 }
 
+// ============================================================
+// RENDERIZAÇÃO
+// ============================================================
 function renderList() {
     const combat = appState.get('combat');
     if (!combat) return;
@@ -49,28 +62,54 @@ function renderList() {
         const active = i === combat.turnIndex;
         const hpPct = (c.hp / c.hpMax) * 100;
         const cls = hpPct < 30 ? 'red' : hpPct < 60 ? 'gold' : 'green';
-
         const conds = (c.condicoes || []).map(cond =>
             `<span class="tag red">${escapeHtml(cond.nome)} (${cond.restante})</span>`
         ).join(' ');
 
+        // Reação gasta (checkbox)
+        const reacaoChecked = c.reacaoGasta ? 'checked' : '';
+
+        // Último golpe
+        const derrubadoPor = c.derrotadoPor ? ` (derrubado por ${escapeHtml(c.derrotadoPor)})` : '';
+
         return `
-        <div class="initiative-item ${active ? 'active-turn' : ''}">
-            <div class="init-order">${c.iniciativa}</div>
+        <div class="initiative-item ${active ? 'active-turn' : ''}" data-id="${c.id}">
+            <div style="display:flex;align-items:center;gap:6px;">
+                <input type="number" value="${c.iniciativa}" style="width:40px;padding:2px;" 
+                       onchange="_editIniciativa('${c.id}', this.value)" title="Editar iniciativa">
+                <span class="init-order">${c.iniciativa}</span>
+            </div>
             <div style="flex:1;">
                 <strong>${escapeHtml(c.nome)}</strong> ${active ? '👈' : ''}
+                ${derrubadoPor}
                 ${conds ? `<br><span style="font-size:0.75rem;">${conds}</span>` : ''}
                 <div style="display:flex;align-items:center;gap:5px;margin-top:4px;">
                     <input type="number" value="${c.hp}" style="width:48px;padding:3px;" onchange="_updateCombHp('${c.id}', this.value)">
                     <span style="font-size:0.75rem;">/ ${c.hpMax}</span>
                     <div class="bar-bg" style="flex:1;"><div class="bar-fill ${cls}" style="width:${hpPct}%;"></div></div>
                 </div>
+                <div style="margin-top:2px; font-size:0.7rem;">
+                    <label><input type="checkbox" class="reacao-check" data-id="${c.id}" ${reacaoChecked} 
+                                  onchange="window._toggleReacao('${c.id}', this.checked)"> Reação gasta</label>
+                </div>
             </div>
             <button class="btn btn-red btn-sm" onclick="_removeComb('${c.id}')">🗑️</button>
         </div>`;
     }).join('');
+
+    // Atualiza os listeners dos checkboxes de reação
+    document.querySelectorAll('.reacao-check').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            const id = e.target.dataset.id;
+            const checked = e.target.checked;
+            toggleReacao(id, checked);
+        });
+    });
 }
 
+// ============================================================
+// AÇÕES DO COMBATE
+// ============================================================
 function addCombatant() {
     const nome = document.getElementById('combNome').value.trim();
     if (!nome) return window.showToast?.('⚠️ Nome obrigatório');
@@ -80,7 +119,9 @@ function addCombatant() {
         nome,
         hp: +document.getElementById('combHp').value || 30,
         hpMax: +document.getElementById('combHpMax').value || 30,
-        iniciativa: +document.getElementById('combInic').value || 10
+        iniciativa: +document.getElementById('combInic').value || 10,
+        reacaoGasta: false,
+        derrotadoPor: null
     });
 
     document.getElementById('combNome').value = '';
@@ -91,12 +132,14 @@ function addCombatant() {
 function rollAll() {
     combatEngine.rollAllInitiatives();
     window.showToast?.('🎲 Iniciativas roladas!');
+    registrarAcao('Mestre', 'Rolou novas iniciativas.');
 }
 
 function nextTurn() {
     const current = combatEngine.nextTurn();
     if (current) {
         const combat = appState.get('combat');
+        // Decrementa condições
         combat.combatants.forEach(c => {
             if (c.condicoes && c.condicoes.length) {
                 c.condicoes = c.condicoes.filter(cond => {
@@ -104,11 +147,14 @@ function nextTurn() {
                     return cond.restante > 0;
                 });
             }
+            // Reseta Reação gasta no início do turno
+            c.reacaoGasta = false;
             c.fluxoAtivo = false;
         });
         appState.set('combat', combat);
         window.showToast?.(`▶️ Turno de: ${current.nome}`);
         appState.enviarNotificacao(`▶️ Turno de ${current.nome}.`);
+        registrarAcao(current.nome, 'Iniciou seu turno.');
     } else {
         window.showToast?.('⚠️ Nenhum combatente ativo.');
     }
@@ -133,6 +179,7 @@ function attemptBF() {
             appState.set('characters', chars);
             appState.logAction(`⚡ Black Flash de ${char.nome}! Fluxo ativado.`);
             appState.enviarNotificacao(`⚡ Black Flash de ${char.nome}!`);
+            registrarAcao(char.nome, 'Realizou Black Flash!');
         }
     }
 }
@@ -140,11 +187,17 @@ function attemptBF() {
 function clearCombat() {
     if (confirm('🗑️ Limpar todos os combatentes?')) {
         combatEngine.clearCombat();
+        historico = [];
+        appState.set('combat', { ...appState.get('combat'), historico });
         window.showToast?.('🗑️ Combate limpo.');
         appState.enviarNotificacao('🗑️ Combate foi limpo pelo mestre.');
+        renderHistorico();
     }
 }
 
+// ============================================================
+// CONDIÇÕES (com animação)
+// ============================================================
 function aplicarCondicao() {
     const combat = appState.get('combat');
     if (!combat || !combat.combatants.length) {
@@ -163,8 +216,15 @@ function aplicarCondicao() {
     appState.set('combat', combat);
     window.showToast?.(`🧪 ${alvo.nome} recebeu ${tipo} (${duracao} rodadas)`);
     appState.enviarNotificacao(`🧪 ${alvo.nome} recebeu ${tipo} por ${duracao} rodadas.`);
+
+    // Animação: piscar em vermelho
+    piscarElemento(alvo.id);
+    registrarAcao(alvo.nome, `Recebeu condição ${tipo} (${duracao} rodadas).`);
 }
 
+// ============================================================
+// RESISTÊNCIA DESESPERADA (com escolha de atributo)
+// ============================================================
 function resistenciaDesesperada() {
     const combat = appState.get('combat');
     if (!combat || !combat.combatants.length) {
@@ -178,20 +238,62 @@ function resistenciaDesesperada() {
         return window.showToast?.('⚠️ EA insuficiente (mínimo 5).');
     }
 
-    alvo.ea -= 5;
-    const pre = alvo.PRE || alvo.presenca || 0;
-    const roll = Math.floor(Math.random() * 20) + 1 + pre;
+    // Pergunta qual atributo usar
+    const atributo = prompt('Qual atributo para o teste? (Fortitude, Reflexos ou Vontade)', 'Vontade');
+    if (!atributo) return;
+
+    const mod = parseInt(prompt(`Qual o modificador de ${atributo}? (ex: +2, -1)`, '0')) || 0;
+    const roll = Math.floor(Math.random() * 20) + 1 + mod;
     const cd = 15;
     const sucesso = roll >= cd;
 
-    window.showToast?.(`💪 Resistência Desesperada: ${roll} (${sucesso ? '✅ Sucesso!' : '❌ Falha'})`);
-    appState.logAction(`💪 ${alvo.nome} usou Resistência Desesperada: ${roll} (${sucesso ? 'Sucesso' : 'Falha'})`);
+    alvo.ea -= 5;
+    window.showToast?.(`💪 Resistência Desesperada (${atributo}): ${roll} (${sucesso ? '✅ Sucesso!' : '❌ Falha'})`);
+    appState.logAction(`💪 ${alvo.nome} usou Resistência Desesperada (${atributo}): ${roll} (${sucesso ? 'Sucesso' : 'Falha'})`);
     appState.enviarNotificacao(`💪 ${alvo.nome} usou Resistência Desesperada!`);
 
+    // Animação
+    piscarElemento(alvo.id);
     appState.set('combat', combat);
 }
 
-function aplicarDano(id, dano) {
+// ============================================================
+// FUGIR DO COMBATE (Atletismo CD 15)
+// ============================================================
+function fugirCombate() {
+    const combat = appState.get('combat');
+    if (!combat || !combat.combatants.length) {
+        return window.showToast?.('⚠️ Nenhum combatente em combate.');
+    }
+
+    const alvo = combat.combatants[combat.turnIndex];
+    if (!alvo) return window.showToast?.('⚠️ Nenhum combatente ativo.');
+
+    // Pergunta modificador de Atletismo
+    const mod = parseInt(prompt('Modificador de Atletismo do combatente:', '0')) || 0;
+    const roll = Math.floor(Math.random() * 20) + 1 + mod;
+    const cd = 15;
+    const sucesso = roll >= cd;
+
+    if (sucesso) {
+        // Remove o combatente da iniciativa
+        combat.combatants = combat.combatants.filter(c => c.id !== alvo.id);
+        if (combat.turnIndex >= combat.combatants.length) combat.turnIndex = 0;
+        window.showToast?.(`🏃 ${alvo.nome} fugiu do combate! (${roll})`);
+        appState.logAction(`🏃 ${alvo.nome} fugiu do combate (Atletismo ${roll}).`);
+        appState.enviarNotificacao(`🏃 ${alvo.nome} fugiu do combate!`);
+        registrarAcao(alvo.nome, 'Fugiu do combate.');
+        appState.set('combat', combat);
+    } else {
+        window.showToast?.(`❌ ${alvo.nome} falhou em fugir (${roll} < CD 15)`);
+        piscarElemento(alvo.id);
+    }
+}
+
+// ============================================================
+// DANO E ÚLTIMO GOLPE
+// ============================================================
+function aplicarDano(id, dano, agressor = null) {
     const modoTreino = document.getElementById('modoTreino').checked;
     const combat = appState.get('combat');
     const alvo = combat.combatants.find(c => c.id === id);
@@ -203,18 +305,156 @@ function aplicarDano(id, dano) {
     }
 
     alvo.hp = Math.max(0, alvo.hp - dano);
+    piscarElemento(id);
+
+    // Verifica se foi derrubado
+    if (alvo.hp <= 0 && agressor) {
+        alvo.derrotadoPor = agressor;
+        window.showToast?.(`💀 ${alvo.nome} foi derrubado por ${agressor}!`);
+        appState.logAction(`💀 ${alvo.nome} foi derrubado por ${agressor}.`);
+        appState.enviarNotificacao(`💀 ${alvo.nome} foi derrubado por ${agressor}!`);
+        registrarAcao(agressor, `Derrubou ${alvo.nome}.`);
+    }
+
     appState.set('combat', combat);
     window.showToast?.(`💥 ${alvo.nome} sofreu ${dano} de dano.`);
-    appState.logAction(`💥 ${alvo.nome} sofreu ${dano} de dano.`);
     renderList();
 }
 
+// ============================================================
+// REAÇÃO GASTA
+// ============================================================
+function toggleReacao(id, checked) {
+    const combat = appState.get('combat');
+    const alvo = combat.combatants.find(c => c.id === id);
+    if (!alvo) return;
+    alvo.reacaoGasta = checked;
+    appState.set('combat', combat);
+}
+
+// ============================================================
+// EDITAR INICIATIVA
+// ============================================================
+function editIniciativa(id, newVal) {
+    const combat = appState.get('combat');
+    const alvo = combat.combatants.find(c => c.id === id);
+    if (!alvo) return;
+    const valor = parseInt(newVal);
+    if (isNaN(valor)) return;
+    alvo.iniciativa = valor;
+    combat.combatants.sort((a, b) => b.iniciativa - a.iniciativa);
+    appState.set('combat', combat);
+    renderList();
+}
+
+// ============================================================
+// HISTÓRICO DA INICIATIVA
+// ============================================================
+function registrarAcao(nome, acao) {
+    const combat = appState.get('combat');
+    if (!combat) return;
+    if (!historico.length || historico[historico.length-1].rodada !== combat.turnIndex) {
+        historico.push({ rodada: combat.turnIndex, acoes: [] });
+    }
+    const ultima = historico[historico.length-1];
+    ultima.acoes.push({ nome, acao, timestamp: Date.now() });
+    // Limita a 50 entradas
+    if (historico.length > 50) historico.shift();
+    // Salva no estado
+    const data = appState.get('combat');
+    data.historico = historico;
+    appState.set('combat', data);
+    renderHistorico();
+}
+
+function renderHistorico() {
+    const container = document.getElementById('historicoRodadas');
+    if (!historico.length) {
+        container.innerHTML = '<p class="empty-state">Nenhuma rodada registrada.</p>';
+        return;
+    }
+    const html = historico.slice().reverse().map(entry => {
+        const rodada = entry.rodada + 1;
+        const acoes = entry.acoes.map(a => 
+            `<span>${escapeHtml(a.nome)}: ${escapeHtml(a.acao)}</span>`
+        ).join(' • ');
+        return `<div style="border-bottom:1px solid var(--border);padding:2px 0;">
+            <strong>Rodada ${rodada}</strong>: ${acoes}
+        </div>`;
+    }).join('');
+    container.innerHTML = html;
+}
+
+// ============================================================
+// EXPORTAR/IMPORTAR COMBATE
+// ============================================================
+function exportarCombate() {
+    const combat = appState.get('combat');
+    if (!combat) return window.showToast?.('⚠️ Nenhum combate para exportar.');
+    const data = JSON.stringify(combat, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `combate_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    window.showToast?.('📤 Combate exportado!');
+}
+
+function importarCombate() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            try {
+                const data = JSON.parse(ev.target.result);
+                // Garante que campos necessários existam
+                if (!data.combatants) throw new Error('Dados inválidos');
+                appState.set('combat', data);
+                window.showToast?.('📥 Combate importado!');
+                renderList();
+                renderHistorico();
+            } catch (err) {
+                window.showToast?.('❌ Arquivo inválido.');
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+}
+
+// ============================================================
+// ANIMAÇÃO (piscar em vermelho)
+// ============================================================
+function piscarElemento(id) {
+    const items = document.querySelectorAll('.initiative-item');
+    const target = Array.from(items).find(el => el.dataset.id === id);
+    if (!target) return;
+    target.style.transition = 'background 0.3s';
+    target.style.background = '#ff444466';
+    setTimeout(() => {
+        target.style.background = '';
+    }, 1000);
+}
+
+// ============================================================
+// UTILIDADES
+// ============================================================
 function updateCombHp(id, newVal) {
     combatEngine.updateHp(id, parseInt(newVal));
 }
 
 function removeCombatant(id) {
     combatEngine.removeCombatant(id);
+    const combat = appState.get('combat');
+    if (combat && combat.historico) {
+        historico = combat.historico;
+        renderHistorico();
+    }
 }
 
 function quickRoll(faces) {
@@ -224,3 +464,7 @@ function quickRoll(faces) {
     el.style.display = 'block';
     setTimeout(() => el.style.display = 'none', 3000);
 }
+
+// Expor funções para onclick
+window._toggleReacao = toggleReacao;
+window._editIniciativa = editIniciativa;
