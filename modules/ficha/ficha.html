@@ -109,8 +109,8 @@
                 <div><label>⚖️ Karma</label><input type="number" id="fKarma" value="0" min="-10" max="10"></div>
             </div>
 
-            <!-- ✅ ATRIBUTOS (integrado aqui) -->
-            <label class="mt-1" style="font-weight:600; color:var(--gold);">📊 Atributos (máx 5, ou 7 para Restringido)</label>
+            <!-- ✅ ATRIBUTOS (com limites dinâmicos e soma 12) -->
+            <label class="mt-1" style="font-weight:600; color:var(--gold);">📊 Atributos (máx 5, ou 6/7 para Restringido)</label>
             <div class="flex-row" style="gap:6px; flex-wrap:wrap;">
                 <div style="flex:1; min-width:80px;">
                     <label>FOR</label>
@@ -156,7 +156,8 @@
                 </div>
             </div>
             <div style="font-size:0.75rem; color:var(--text-dim); margin-top:4px;">
-                💡 Soma atual: <span id="somaAtributos">6</span> / Limite: <span id="limiteAtributos">5</span>
+                💡 Soma atual: <span id="somaAtributos">6</span> / Limite: <span id="limiteAtributos">12</span>
+                <span id="atributosStatus" style="margin-left:8px;"></span>
             </div>
 
             <label class="mt-1">Perícias</label>
@@ -186,10 +187,8 @@
         <div id="ftab-lore" class="ftab-content" style="display:none;">
             <label>História / Antecedentes</label>
             <textarea id="fLore" rows="6" placeholder="Conte a história do seu personagem..."></textarea>
-
             <label class="mt-1">Aparência</label>
             <textarea id="fAparencia" rows="3" placeholder="Descreva a aparência do personagem..."></textarea>
-
             <label class="mt-1">Clã / Patrono</label>
             <input id="fCla" placeholder="Nome do clã ou patrono">
         </div>
@@ -198,7 +197,6 @@
         <div id="ftab-tecnica" class="ftab-content" style="display:none;">
             <label>Técnica Inata</label>
             <input id="fTecnica" placeholder="Nome e descrição da sua técnica">
-
             <label class="mt-1">Feitiços</label>
             <div class="flex-row">
                 <input id="fFeiticoNome" placeholder="Nome do feitiço" style="flex:1;">
@@ -206,7 +204,6 @@
             </div>
             <button class="btn btn-sm mt-1" id="btnAddFeitico">➕ Adicionar Feitiço</button>
             <div id="fFeiticosTags" class="tags mt-1"></div>
-
             <label class="mt-1">Votos Vinculativos</label>
             <div class="flex-row">
                 <input id="fVotoNome" placeholder="Nome do Voto" style="flex:1;">

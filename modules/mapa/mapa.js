@@ -4,18 +4,32 @@ import { generateId, escapeHtml } from '../../core/utils/utils.js';
 
 let canvas, ctx;
 let gridSize = 10;
-let selectedTokenId = null;
 let tokens = [];
+let selectedTokenId = null;
+let draggingToken = null;
+let dragOffsetX = 0, dragOffsetY = 0;
+let backgroundImage = null;
+let isDraggingCanvas = false;
+let lastMouseX = 0, lastMouseY = 0;
 
 export function init() {
     canvas = document.getElementById('mapCanvas');
     ctx = canvas.getContext('2d');
     resizeCanvas();
 
+    // Carrega dados salvos
     const saved = appState.get('mapa');
     if (saved) {
         gridSize = saved.gridSize || 10;
         tokens = saved.tokens || [];
+        if (saved.background) {
+            const img = new Image();
+            img.src = saved.background;
+            img.onload = () => {
+                backgroundImage = img;
+                renderMapa();
+            };
+        }
         document.getElementById('gridSize').value = gridSize;
     }
 
@@ -24,29 +38,47 @@ export function init() {
         if (data) {
             gridSize = data.gridSize || 10;
             tokens = data.tokens || [];
+            if (data.background && !backgroundImage) {
+                const img = new Image();
+                img.src = data.background;
+                img.onload = () => {
+                    backgroundImage = img;
+                    renderMapa();
+                };
+            }
             renderMapa();
         }
     });
 
+    // Eventos
     document.getElementById('btnAddToken').addEventListener('click', addToken);
     document.getElementById('btnClearMapa').addEventListener('click', clearMapa);
     document.getElementById('btnSyncMapa').addEventListener('click', syncMapa);
-    document.getElementById('btnImportarCombate').addEventListener('click', importarDoCombate);
     document.getElementById('gridSize').addEventListener('change', (e) => {
         gridSize = parseInt(e.target.value) || 10;
         saveMapa();
         renderMapa();
     });
 
+    // Upload de fundo
+    document.getElementById('btnCarregarFundo').addEventListener('click', () => {
+        document.getElementById('mapaFundoInput').click();
+    });
+    document.getElementById('mapaFundoInput').addEventListener('change', handleFundoUpload);
+    document.getElementById('btnRemoverFundo').addEventListener('click', removerFundo);
+
+    // Eventos do canvas (arrastar tokens, clicar)
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseup', handleMouseUp);
     canvas.addEventListener('click', handleCanvasClick);
     window.addEventListener('resize', resizeCanvas);
 }
 
 function resizeCanvas() {
     const rect = canvas.parentElement.getBoundingClientRect();
-    const size = Math.min(rect.width, window.innerHeight * 0.6);
-    canvas.width = size;
-    canvas.height = size;
+    canvas.width = rect.width;
+    canvas.height = rect.height;
     renderMapa();
 }
 
@@ -55,8 +87,14 @@ function renderMapa() {
     const w = canvas.width, h = canvas.height;
     ctx.clearRect(0, 0, w, h);
 
+    // Desenha fundo (se houver)
+    if (backgroundImage) {
+        ctx.drawImage(backgroundImage, 0, 0, w, h);
+    }
+
+    // Desenha grid
     const cellSize = w / gridSize;
-    ctx.strokeStyle = '#444';
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
     ctx.lineWidth = 0.5;
     for (let i = 0; i <= gridSize; i++) {
         ctx.beginPath();
@@ -69,6 +107,7 @@ function renderMapa() {
         ctx.stroke();
     }
 
+    // Desenha tokens
     tokens.forEach(token => {
         const x = token.x * cellSize + cellSize/2;
         const y = token.y * cellSize + cellSize/2;
@@ -122,61 +161,121 @@ function syncMapa() {
     saveMapa();
 }
 
-// ========== INTEGRAÇÃO COM COMBATE ==========
-function importarDoCombate() {
-    const combat = appState.get('combat');
-    if (!combat || !combat.combatants.length) {
-        return window.showToast?.('⚠️ Nenhum combatente no combate.');
-    }
-    const confirmar = confirm(`Importar ${combat.combatants.length} combatentes para o mapa?`);
-    if (!confirmar) return;
-    combat.combatants.forEach((c, i) => {
-        tokens.push({
-            id: generateId(),
-            nome: c.nome,
-            color: '#c9a24e',
-            x: i % gridSize,
-            y: Math.floor(i / gridSize)
-        });
-    });
-    saveMapa();
-    renderMapa();
-    window.showToast?.('✅ Combatentes importados para o mapa!');
+// ============================================================
+// FUNDO (UPLOAD DE IMAGEM)
+// ============================================================
+function handleFundoUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        const img = new Image();
+        img.src = ev.target.result;
+        img.onload = () => {
+            backgroundImage = img;
+            document.getElementById('btnRemoverFundo').style.display = '';
+            saveMapa();
+            renderMapa();
+            window.showToast?.('🖼️ Fundo carregado!');
+        };
+    };
+    reader.readAsDataURL(file);
 }
 
-function handleCanvasClick(e) {
+function removerFundo() {
+    backgroundImage = null;
+    document.getElementById('btnRemoverFundo').style.display = 'none';
+    saveMapa();
+    renderMapa();
+    window.showToast?.('🖼️ Fundo removido.');
+}
+
+// ============================================================
+// ARRASTAR TOKENS
+// ============================================================
+function getGridPos(mx, my) {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    const mx = (e.clientX - rect.left) * scaleX;
-    const my = (e.clientY - rect.top) * scaleY;
+    const x = (mx - rect.left) * scaleX;
+    const y = (my - rect.top) * scaleY;
     const cellSize = canvas.width / gridSize;
-    const gridX = Math.floor(mx / cellSize);
-    const gridY = Math.floor(my / cellSize);
-    if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize) return;
+    return { gridX: Math.floor(x / cellSize), gridY: Math.floor(y / cellSize), x, y, cellSize };
+}
 
-    const clicked = tokens.find(t => t.x === gridX && t.y === gridY);
+function handleMouseDown(e) {
+    const pos = getGridPos(e.clientX, e.clientY);
+    const clicked = tokens.find(t => t.x === pos.gridX && t.y === pos.gridY);
     if (clicked) {
         selectedTokenId = clicked.id;
-        document.getElementById('tokenStatus').textContent = `Token "${clicked.nome}" selecionado.`;
+        draggingToken = clicked;
+        const cellSize = pos.cellSize;
+        dragOffsetX = (pos.x - clicked.x * cellSize) / cellSize;
+        dragOffsetY = (pos.y - clicked.y * cellSize) / cellSize;
+        canvas.style.cursor = 'grabbing';
         renderMapa();
         return;
     }
-    if (selectedTokenId) {
-        const token = tokens.find(t => t.id === selectedTokenId);
-        if (token) {
-            if (!tokens.some(t => t.id !== selectedTokenId && t.x === gridX && t.y === gridY)) {
-                token.x = gridX;
-                token.y = gridY;
-                saveMapa();
-                renderMapa();
-            } else {
-                window.showToast?.('⚠️ Posição ocupada.');
-            }
+    // Se clicar em área vazia, desseleciona
+    selectedTokenId = null;
+    renderMapa();
+}
+
+function handleMouseMove(e) {
+    const pos = getGridPos(e.clientX, e.clientY);
+    // Tooltip
+    const tooltip = document.getElementById('mapaTooltip');
+    if (pos.gridX >= 0 && pos.gridX < gridSize && pos.gridY >= 0 && pos.gridY < gridSize) {
+        tooltip.textContent = `(${pos.gridX}, ${pos.gridY})`;
+        tooltip.style.display = 'block';
+    } else {
+        tooltip.style.display = 'none';
+    }
+
+    if (draggingToken) {
+        const newGridX = Math.round(pos.x / pos.cellSize - dragOffsetX);
+        const newGridY = Math.round(pos.y / pos.cellSize - dragOffsetY);
+        // Limita ao grid
+        const clampedX = Math.max(0, Math.min(gridSize - 1, newGridX));
+        const clampedY = Math.max(0, Math.min(gridSize - 1, newGridY));
+        // Verifica se a posição está ocupada por outro token (exceto ele mesmo)
+        const occupied = tokens.some(t => t.id !== draggingToken.id && t.x === clampedX && t.y === clampedY);
+        if (!occupied) {
+            draggingToken.x = clampedX;
+            draggingToken.y = clampedY;
+            renderMapa();
         }
     }
 }
 
+function handleMouseUp(e) {
+    if (draggingToken) {
+        saveMapa();
+        draggingToken = null;
+        canvas.style.cursor = 'grab';
+    }
+}
+
+function handleCanvasClick(e) {
+    const pos = getGridPos(e.clientX, e.clientY);
+    const clicked = tokens.find(t => t.x === pos.gridX && t.y === pos.gridY);
+    if (clicked) {
+        selectedTokenId = clicked.id;
+        renderMapa();
+    } else {
+        selectedTokenId = null;
+        renderMapa();
+    }
+}
+
+// ============================================================
+// SALVAR ESTADO
+// ============================================================
 function saveMapa() {
-    appState.set('mapa', { gridSize, tokens });
+    const data = {
+        gridSize,
+        tokens,
+        background: backgroundImage ? backgroundImage.src : null
+    };
+    appState.set('mapa', data);
 }

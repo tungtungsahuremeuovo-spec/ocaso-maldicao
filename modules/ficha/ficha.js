@@ -61,7 +61,7 @@ export function init() {
     // =============================================
     // ✅ ATRIBUTOS – Listeners
     // =============================================
-    // Atualizar modificadores quando os atributos mudarem
+    // Atualizar modificadores e soma quando mudarem
     document.querySelectorAll('[id^="fForca"],[id^="fDestreza"],[id^="fConstituicao"],[id^="fInteligencia"],[id^="fSabedoria"],[id^="fPresenca"]').forEach(input => {
         input.addEventListener('input', function() {
             const id = this.id.replace('f', '').toLowerCase();
@@ -70,13 +70,13 @@ export function init() {
         });
     });
 
-    // Atualizar limite quando o Estilo mudar (Restringido → 7, outros → 5)
+    // Quando estilo ou grau mudar, atualizar limites máximos e soma
     document.getElementById('fEstilo').addEventListener('change', function() {
-        const limite = this.value === 'Restringido' ? 7 : 5;
-        document.getElementById('limiteAtributos').textContent = limite;
-        ['fForca','fDestreza','fConstituicao'].forEach(id => {
-            document.getElementById(id).max = limite;
-        });
+        atualizarLimitesAtributos();
+        atualizarSomaAtributos();
+    });
+    document.getElementById('fGrau').addEventListener('change', function() {
+        atualizarLimitesAtributos();
         atualizarSomaAtributos();
     });
 
@@ -90,6 +90,11 @@ export function init() {
             btn.classList.add('active');
         });
     });
+
+    // Inicializa limites e soma
+    atualizarLimitesAtributos();
+    ['Forca','Destreza','Constituicao','Inteligencia','Sabedoria','Presenca'].forEach(attr => atualizarModificador(attr.toLowerCase()));
+    atualizarSomaAtributos();
 }
 
 // =============================================
@@ -114,6 +119,38 @@ function calcularModificador(valor) {
     return 0;
 }
 
+function atualizarLimitesAtributos() {
+    const estilo = document.getElementById('fEstilo').value;
+    const grau = document.getElementById('fGrau').value;
+    let maxFisico = 5; // padrão
+    if (estilo === 'Restringido') {
+        // Conforme livro: 4º → 6, 2º → 7, 1º → 7, Especial → 7 (assumimos)
+        if (grau === '4') maxFisico = 6;
+        else if (grau === '2' || grau === '1' || grau === 'E') maxFisico = 7;
+        else maxFisico = 6; // 3º Grau não especificado, mas mantemos 6
+    }
+    // Aplica aos inputs físicos
+    ['fForca','fDestreza','fConstituicao'].forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+            input.max = maxFisico;
+            if (parseInt(input.value) > maxFisico) input.value = maxFisico;
+            // Atualiza o modificador após ajuste
+            const attr = id.replace('f', '').toLowerCase();
+            atualizarModificador(attr);
+        }
+    });
+    // INT, SAB, PRE sempre máx 5
+    ['fInteligencia','fSabedoria','fPresenca'].forEach(id => {
+        const input = document.getElementById(id);
+        if (input) input.max = 5;
+    });
+    // Limite da soma sempre 12
+    document.getElementById('limiteAtributos').textContent = '12';
+    // Recalcula soma
+    atualizarSomaAtributos();
+}
+
 function atualizarSomaAtributos() {
     const forca = +document.getElementById('fForca').value || 0;
     const destreza = +document.getElementById('fDestreza').value || 0;
@@ -122,19 +159,57 @@ function atualizarSomaAtributos() {
     const sabedoria = +document.getElementById('fSabedoria').value || 0;
     const presenca = +document.getElementById('fPresenca').value || 0;
     const total = forca + destreza + constituicao + inteligencia + sabedoria + presenca;
-    document.getElementById('somaAtributos').textContent = total;
-    const limite = document.getElementById('fEstilo').value === 'Restringido' ? 7 : 5;
-    document.getElementById('limiteAtributos').textContent = limite;
-    if (total > limite) {
-        document.getElementById('somaAtributos').style.color = 'var(--red)';
-        document.getElementById('somaAtributos').style.fontWeight = 'bold';
+    const elSoma = document.getElementById('somaAtributos');
+    const elStatus = document.getElementById('atributosStatus');
+    elSoma.textContent = total;
+    if (total > 12) {
+        elSoma.style.color = 'var(--red)';
+        elSoma.style.fontWeight = 'bold';
+        if (elStatus) elStatus.textContent = '⚠️ Excede o limite de 12!';
     } else {
-        document.getElementById('somaAtributos').style.color = '';
-        document.getElementById('somaAtributos').style.fontWeight = '';
+        elSoma.style.color = '';
+        elSoma.style.fontWeight = '';
+        if (elStatus) elStatus.textContent = total === 12 ? '✅ Pontos ideais' : '';
     }
 }
 
-// Sugestão automática de PV/BT conforme Grau
+function validarAtributos() {
+    const forca = +document.getElementById('fForca')?.value || 0;
+    const destreza = +document.getElementById('fDestreza')?.value || 0;
+    const constituicao = +document.getElementById('fConstituicao')?.value || 0;
+    const inteligencia = +document.getElementById('fInteligencia')?.value || 0;
+    const sabedoria = +document.getElementById('fSabedoria')?.value || 0;
+    const presenca = +document.getElementById('fPresenca')?.value || 0;
+    const total = forca + destreza + constituicao + inteligencia + sabedoria + presenca;
+    // Soma não pode exceder 12 (pode ser menor, mas a regra é distribuir 12)
+    if (total > 12) {
+        window.showToast?.(`⚠️ Soma de atributos (${total}) excede o limite de 12 pontos.`);
+        return false;
+    }
+    // Verifica limites individuais (já são aplicados pelos max dos inputs, mas reforça)
+    const estilo = document.getElementById('fEstilo').value;
+    const grau = document.getElementById('fGrau').value;
+    let maxFisico = 5;
+    if (estilo === 'Restringido') {
+        if (grau === '4') maxFisico = 6;
+        else if (grau === '2' || grau === '1' || grau === 'E') maxFisico = 7;
+        else maxFisico = 6;
+    }
+    const fisicos = [forca, destreza, constituicao];
+    if (fisicos.some(v => v > maxFisico)) {
+        window.showToast?.(`⚠️ Atributos físicos (FOR, DES, CON) não podem exceder ${maxFisico} para este Grau/Estilo.`);
+        return false;
+    }
+    if (inteligencia > 5 || sabedoria > 5 || presenca > 5) {
+        window.showToast?.('⚠️ INT, SAB e PRE têm limite máximo 5.');
+        return false;
+    }
+    return true;
+}
+
+// =============================================
+// ✅ SUGESTÃO AUTOMÁTICA DE PV/BT CONFORME GRAU
+// =============================================
 function atualizarStatsPorGrau() {
     const grau = document.getElementById('fGrau').value;
     const stats = {
@@ -152,6 +227,9 @@ function atualizarStatsPorGrau() {
     window.showToast?.(`📊 Grau ${grau}: PV ${s.pv}, EA ${s.ea}, BT +${s.bt}`);
 }
 
+// =============================================
+// ✅ FÔLEGO PARA RESTRINGIDO
+// =============================================
 function updateFolegoVisibility() {
     const estilo = document.getElementById('fEstilo').value;
     const folegoInput = document.getElementById('fFolego');
@@ -164,6 +242,9 @@ function updateFolegoVisibility() {
     }
 }
 
+// =============================================
+// ✅ AVATAR
+// =============================================
 function handleAvatarUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -182,10 +263,16 @@ function removeAvatar() {
     document.getElementById('btnRemoveAvatar').style.display = 'none';
 }
 
+// =============================================
+// ✅ GET PLAYER CHARACTER
+// =============================================
 function getPlayerCharacter() {
     return appState.get('characters').find(c => c.isPlayerCharacter) || null;
 }
 
+// =============================================
+// ✅ RENDER FICHA (exibição)
+// =============================================
 function renderFicha() {
     const container = document.getElementById('playerFicha');
     const char = getPlayerCharacter();
@@ -207,7 +294,7 @@ function renderFicha() {
         const statusBadge = { na_escola: '🏫 Na Escola', em_missao: '⚔️ Em Missão', ferido: '🏥 Ferido', ausente: '❓ Ausente' }[char.status] || '🏫 Na Escola';
         const exaustaoBar = char.exaustao > 0 ? `<span style="color:var(--red);">⚠️ Exaustão: ${char.exaustao}/5</span>` : '';
 
-        // ✅ Exibição dos atributos
+        // Exibição dos atributos com modificadores
         const atributosStr = `FOR ${char.forca||1} (${calcularModificador(char.forca||1)}), DES ${char.destreza||1} (${calcularModificador(char.destreza||1)}), CON ${char.constituicao||1} (${calcularModificador(char.constituicao||1)}), INT ${char.inteligencia||1} (${calcularModificador(char.inteligencia||1)}), SAB ${char.sabedoria||1} (${calcularModificador(char.sabedoria||1)}), PRE ${char.presenca||1} (${calcularModificador(char.presenca||1)})`;
 
         container.innerHTML = `
@@ -239,7 +326,6 @@ function renderFicha() {
                 <p><strong>Nível de Poder:</strong> ${char.nivelPoder || 1}</p>
                 <p><strong>🏅 Honra:</strong> ${char.honra || 0} | <strong>Glória:</strong> ${char.gloria || 0}</p>
                 <p><strong>⚖️ Karma:</strong> ${char.karma || 0}</p>
-                <!-- ✅ EXIBIÇÃO DOS ATRIBUTOS -->
                 <p><strong>Atributos:</strong> ${atributosStr}</p>
                 <p><strong>⚡ Black Flashes:</strong> ${char.blackFlashCount || 0}</p>
                 <p><strong>🌀 Estado de Fluxo:</strong> ${char.fluxoAtivo ? 'Ativo' : 'Inativo'}</p>
@@ -266,6 +352,9 @@ function renderFicha() {
     }
 }
 
+// =============================================
+// ✅ FORMULÁRIO - CRIAR/EDITAR
+// =============================================
 function showCreateForm() {
     document.getElementById('fichaForm').style.display = 'block';
     document.getElementById('btnNewFicha').style.display = 'none';
@@ -302,15 +391,16 @@ function fillFormForEdit(char) {
     document.getElementById('fDiario').value = char.diario || '';
     document.getElementById('fKarma').value = char.karma || 0;
 
-    // ✅ CARREGAR ATRIBUTOS
+    // Carregar atributos
     document.getElementById('fForca').value = char.forca || 1;
     document.getElementById('fDestreza').value = char.destreza || 1;
     document.getElementById('fConstituicao').value = char.constituicao || 1;
     document.getElementById('fInteligencia').value = char.inteligencia || 1;
     document.getElementById('fSabedoria').value = char.sabedoria || 1;
     document.getElementById('fPresenca').value = char.presenca || 1;
-    // Atualiza modificadores e soma
+    // Atualizar modificadores e limites
     ['Forca','Destreza','Constituicao','Inteligencia','Sabedoria','Presenca'].forEach(attr => atualizarModificador(attr.toLowerCase()));
+    atualizarLimitesAtributos();
     atualizarSomaAtributos();
 
     periciasTemp = (char.pericias || '').split(',').filter(Boolean).map(s => s.trim());
@@ -351,11 +441,12 @@ function clearForm() {
     document.getElementById('fDiario').value = '';
     document.getElementById('fKarma').value = 0;
 
-    // ✅ RESETAR ATRIBUTOS
+    // Resetar atributos para 1
     ['fForca','fDestreza','fConstituicao','fInteligencia','fSabedoria','fPresenca'].forEach(id => {
         document.getElementById(id).value = 1;
     });
     ['Forca','Destreza','Constituicao','Inteligencia','Sabedoria','Presenca'].forEach(attr => atualizarModificador(attr.toLowerCase()));
+    atualizarLimitesAtributos();
     atualizarSomaAtributos();
 
     periciasTemp = [];
@@ -371,8 +462,9 @@ function clearForm() {
     document.getElementById('fHistoricoList').innerHTML = '';
 }
 
-// ========== TAGS ==========
-
+// =============================================
+// ✅ TAGS – Perícias, Cicatrizes, Feitiços, Itens, Aliados, Votos
+// =============================================
 function addTextTag(type) {
     const input = document.getElementById(type === 'pericia' ? 'fPericiaInput' : 'fCicatrizInput');
     const val = input.value.trim();
@@ -490,7 +582,9 @@ function handleRemove(e) {
     renderAllTags();
 }
 
-// ========== HISTÓRICO ==========
+// =============================================
+// ✅ HISTÓRICO
+// =============================================
 function renderHistorico(char) {
     const history = char.history || [];
     const container = document.getElementById('fHistoricoList');
@@ -507,24 +601,9 @@ function renderHistorico(char) {
     }).join('');
 }
 
-// ========== VALIDAÇÃO DE ATRIBUTOS ==========
-function validarAtributos() {
-    const forca = +document.getElementById('fForca')?.value || 0;
-    const destreza = +document.getElementById('fDestreza')?.value || 0;
-    const constituicao = +document.getElementById('fConstituicao')?.value || 0;
-    const inteligencia = +document.getElementById('fInteligencia')?.value || 0;
-    const sabedoria = +document.getElementById('fSabedoria')?.value || 0;
-    const presenca = +document.getElementById('fPresenca')?.value || 0;
-    const total = forca + destreza + constituicao + inteligencia + sabedoria + presenca;
-    const limite = document.getElementById('fEstilo').value === 'Restringido' ? 7 : 5;
-    if (total > limite) {
-        window.showToast?.(`⚠️ Soma de atributos (${total}) excede o limite (${limite})`);
-        return false;
-    }
-    return true;
-}
-
-// ========== SALVAR ==========
+// =============================================
+// ✅ SALVAR PERSONAGEM
+// =============================================
 async function saveCharacter() {
     const nome = document.getElementById('fNome').value.trim();
     if (!nome) return window.showToast?.('⚠️ Nome obrigatório');
@@ -573,7 +652,6 @@ async function saveCharacter() {
         gloria: +document.getElementById('fGloria').value || 0,
         diario: document.getElementById('fDiario').value,
         karma: +document.getElementById('fKarma').value || 0,
-        // ✅ ATRIBUTOS
         forca: +document.getElementById('fForca').value || 1,
         destreza: +document.getElementById('fDestreza').value || 1,
         constituicao: +document.getElementById('fConstituicao').value || 1,
@@ -588,7 +666,6 @@ async function saveCharacter() {
             'nome','origem','estilo','grau','status','hpMax','hp','eaMax','ea',
             'folego','exaustao','nivelPoder','ambicao','medos','notas','lore',
             'aparencia','cla','tecnica','honra','gloria','karma','diario',
-            // ✅ ATRIBUTOS NO HISTÓRICO
             'forca','destreza','constituicao','inteligencia','sabedoria','presenca'
         ];
         fieldsToCompare.forEach(field => {
@@ -637,7 +714,9 @@ function cancelEdit() {
     renderFicha();
 }
 
-// ========== EXPORTAR PDF ==========
+// =============================================
+// ✅ EXPORTAR PDF
+// =============================================
 function exportPDF() {
     const char = getPlayerCharacter();
     if (!char) return;
@@ -667,7 +746,9 @@ function exportPDF() {
     printWindow.close();
 }
 
-// ========== IMPORTAR / EXPORTAR FICHA (JSON) ==========
+// =============================================
+// ✅ IMPORTAR / EXPORTAR FICHA (JSON)
+// =============================================
 function exportarFicha() {
     const char = getPlayerCharacter();
     if (!char) return;
