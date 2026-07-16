@@ -12,6 +12,10 @@ let isDragging = false;
 
 export function init() {
     canvas = document.getElementById('mapCanvas');
+    if (!canvas) {
+        console.warn('Mapa: canvas não encontrado');
+        return;
+    }
     ctx = canvas.getContext('2d');
     resizeCanvas();
 
@@ -20,7 +24,8 @@ export function init() {
         gridSize = saved.gridSize || 10;
         tokens = saved.tokens || [];
         backgroundImage = saved.backgroundImage || null;
-        document.getElementById('gridSize').value = gridSize;
+        const gridSizeInput = document.getElementById('gridSize');
+        if (gridSizeInput) gridSizeInput.value = gridSize;
     }
 
     renderMapa();
@@ -33,19 +38,29 @@ export function init() {
         }
     });
 
-    document.getElementById('btnAddToken').addEventListener('click', addToken);
-    document.getElementById('btnClearMapa').addEventListener('click', clearMapa);
-    document.getElementById('btnSyncMapa').addEventListener('click', syncMapa);
-    document.getElementById('btnImportarCombate').addEventListener('click', importarDoCombate);
-    document.getElementById('gridSize').addEventListener('change', (e) => {
-        gridSize = parseInt(e.target.value) || 10;
-        saveMapa();
-        renderMapa();
-    });
-
+    const btnAddToken = document.getElementById('btnAddToken');
+    const btnClearMapa = document.getElementById('btnClearMapa');
+    const btnSyncMapa = document.getElementById('btnSyncMapa');
+    const btnImportarCombate = document.getElementById('btnImportarCombate');
+    const gridSizeInput = document.getElementById('gridSize');
     const imageInput = document.getElementById('mapImageInput');
-    document.getElementById('btnUploadImagem').addEventListener('click', () => imageInput.click());
-    imageInput.addEventListener('change', handleImageUpload);
+    const btnUploadImagem = document.getElementById('btnUploadImagem');
+
+    if (btnAddToken) btnAddToken.addEventListener('click', addToken);
+    if (btnClearMapa) btnClearMapa.addEventListener('click', clearMapa);
+    if (btnSyncMapa) btnSyncMapa.addEventListener('click', syncMapa);
+    if (btnImportarCombate) btnImportarCombate.addEventListener('click', importarDoCombate);
+    if (gridSizeInput) {
+        gridSizeInput.addEventListener('change', (e) => {
+            gridSize = parseInt(e.target.value) || 10;
+            saveMapa();
+            renderMapa();
+        });
+    }
+    if (btnUploadImagem && imageInput) {
+        btnUploadImagem.addEventListener('click', () => imageInput.click());
+        imageInput.addEventListener('change', handleImageUpload);
+    }
 
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mousemove', handleMouseMove);
@@ -55,6 +70,7 @@ export function init() {
 }
 
 function resizeCanvas() {
+    if (!canvas) return;
     const rect = canvas.parentElement.getBoundingClientRect();
     const size = Math.min(rect.width, window.innerHeight * 0.6);
     canvas.width = size;
@@ -63,7 +79,7 @@ function resizeCanvas() {
 }
 
 function renderMapa() {
-    if (!ctx) return;
+    if (!ctx || !canvas) return;
     const w = canvas.width, h = canvas.height;
     ctx.clearRect(0, 0, w, h);
 
@@ -120,8 +136,11 @@ function drawGridAndTokens() {
             ctx.stroke();
         }
     });
-    document.getElementById('tokenStatus').textContent = 
-        tokens.length ? `${tokens.length} tokens no mapa.` : 'Nenhum token.';
+
+    const statusEl = document.getElementById('tokenStatus');
+    if (statusEl) {
+        statusEl.textContent = tokens.length ? `${tokens.length} tokens no mapa.` : 'Nenhum token.';
+    }
 }
 
 function handleImageUpload(e) {
@@ -199,7 +218,8 @@ function handleMouseDown(e) {
         isDragging = true;
         dragOffsetX = mx - (token.x * cellSize + cellSize/2);
         dragOffsetY = my - (token.y * cellSize + cellSize/2);
-        document.getElementById('tokenStatus').textContent = `Arrastando ${token.nome}...`;
+        const statusEl = document.getElementById('tokenStatus');
+        if (statusEl) statusEl.textContent = `Arrastando ${token.nome}...`;
         renderMapa();
     }
 }
@@ -228,7 +248,8 @@ function handleMouseUp() {
     if (isDragging && selectedTokenId) {
         isDragging = false;
         saveMapa();
-        document.getElementById('tokenStatus').textContent = 'Token movido.';
+        const statusEl = document.getElementById('tokenStatus');
+        if (statusEl) statusEl.textContent = 'Token movido.';
         renderMapa();
     }
 }
@@ -248,7 +269,8 @@ function handleCanvasClick(e) {
     const clicked = tokens.find(t => t.x === gridX && t.y === gridY);
     if (clicked) {
         selectedTokenId = clicked.id;
-        document.getElementById('tokenStatus').textContent = `Token "${clicked.nome}" selecionado.`;
+        const statusEl = document.getElementById('tokenStatus');
+        if (statusEl) statusEl.textContent = `Token "${clicked.nome}" selecionado.`;
         renderMapa();
         return;
     }

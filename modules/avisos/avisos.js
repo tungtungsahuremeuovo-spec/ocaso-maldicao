@@ -3,18 +3,28 @@ import appState from '../../assets/js/app.js';
 import { generateId, escapeHtml } from '../../core/utils/utils.js';
 
 export function init() {
+    // Verifica se os elementos existem antes de prosseguir
+    const avisoInput = document.getElementById('avisoInput');
+    const btnAddAviso = document.getElementById('btnAddAviso');
+    if (!avisoInput || !btnAddAviso) {
+        console.warn('Avisos: elementos não encontrados.');
+        return;
+    }
+
     if (!appState.get('avisos')) appState.set('avisos', []);
     renderAvisos();
     appState.subscribe('avisos', renderAvisos);
 
-    document.getElementById('btnAddAviso').addEventListener('click', addAviso);
-    document.getElementById('avisoInput').addEventListener('keypress', (e) => {
+    btnAddAviso.addEventListener('click', addAviso);
+    avisoInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') addAviso();
     });
 }
 
 function addAviso() {
-    const texto = document.getElementById('avisoInput').value.trim();
+    const input = document.getElementById('avisoInput');
+    if (!input) return;
+    const texto = input.value.trim();
     if (!texto) return;
     const avisos = appState.get('avisos');
     avisos.push({
@@ -25,13 +35,17 @@ function addAviso() {
     });
     appState.set('avisos', avisos);
     appState.logAction(`📢 Aviso publicado: "${texto}"`);
-    document.getElementById('avisoInput').value = '';
+    input.value = '';
     window.showToast?.('✅ Aviso publicado!');
 }
 
 function renderAvisos() {
-    const avisos = appState.get('avisos') || [];
     const container = document.getElementById('avisosList');
+    if (!container) {
+        console.warn('avisosList não encontrado');
+        return;
+    }
+    const avisos = appState.get('avisos') || [];
     if (!avisos.length) {
         container.innerHTML = '<p class="empty-state">Nenhum aviso publicado.</p>';
         return;

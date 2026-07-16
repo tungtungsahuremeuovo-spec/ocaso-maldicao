@@ -2,16 +2,28 @@
 import appState from '../../assets/js/app.js';
 
 export function init() {
+    const editor = document.getElementById('notasEditor');
+    if (!editor) {
+        console.warn('Notas: elemento notasEditor não encontrado');
+        return;
+    }
     const notas = appState.get('notas') || '';
-    document.getElementById('notasEditor').value = notas;
-    document.getElementById('btnSalvarNotas').addEventListener('click', salvarNotas);
-    // Auto-save a cada 30s
-    setInterval(salvarNotas, 30000);
+    editor.value = notas;
+    const btnSalvar = document.getElementById('btnSalvarNotas');
+    if (btnSalvar) {
+        btnSalvar.addEventListener('click', salvarNotas);
+        setInterval(salvarNotas, 30000);
+    }
 }
 
 function salvarNotas() {
-    const texto = document.getElementById('notasEditor').value;
+    const editor = document.getElementById('notasEditor');
+    if (!editor) return;
+    const texto = editor.value;
     appState.set('notas', texto);
-    document.getElementById('notasStatus').textContent = '✅ Salvo em ' + new Date().toLocaleTimeString('pt-BR');
+    const statusEl = document.getElementById('notasStatus');
+    if (statusEl) {
+        statusEl.textContent = '✅ Salvo em ' + new Date().toLocaleTimeString('pt-BR');
+    }
     appState.logAction('📝 Notas atualizadas.');
 }
