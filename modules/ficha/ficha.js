@@ -58,6 +58,28 @@ export function init() {
     document.getElementById('fAliadoNome').addEventListener('keypress', e => { if (e.key === 'Enter') addAliado(); });
     document.getElementById('fVotoNome').addEventListener('keypress', e => { if (e.key === 'Enter') addVoto(); });
 
+    // =============================================
+    // ✅ ATRIBUTOS – Listeners
+    // =============================================
+    // Atualizar modificadores quando os atributos mudarem
+    document.querySelectorAll('[id^="fForca"],[id^="fDestreza"],[id^="fConstituicao"],[id^="fInteligencia"],[id^="fSabedoria"],[id^="fPresenca"]').forEach(input => {
+        input.addEventListener('input', function() {
+            const id = this.id.replace('f', '').toLowerCase();
+            atualizarModificador(id);
+            atualizarSomaAtributos();
+        });
+    });
+
+    // Atualizar limite quando o Estilo mudar (Restringido → 7, outros → 5)
+    document.getElementById('fEstilo').addEventListener('change', function() {
+        const limite = this.value === 'Restringido' ? 7 : 5;
+        document.getElementById('limiteAtributos').textContent = limite;
+        ['fForca','fDestreza','fConstituicao'].forEach(id => {
+            document.getElementById(id).max = limite;
+        });
+        atualizarSomaAtributos();
+    });
+
     // Abas internas
     document.querySelectorAll('.tab-btn[data-ftab]').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -68,6 +90,48 @@ export function init() {
             btn.classList.add('active');
         });
     });
+}
+
+// =============================================
+// ✅ FUNÇÕES DE ATRIBUTOS
+// =============================================
+function atualizarModificador(atributo) {
+    const input = document.getElementById('f' + atributo.charAt(0).toUpperCase() + atributo.slice(1));
+    const valor = parseInt(input.value) || 1;
+    const mod = calcularModificador(valor);
+    const span = document.getElementById('mod' + atributo.charAt(0).toUpperCase() + atributo.slice(1));
+    if (span) span.textContent = `(${mod >= 0 ? '+' : ''}${mod})`;
+}
+
+function calcularModificador(valor) {
+    if (valor <= 1) return -2;
+    if (valor === 2) return -1;
+    if (valor === 3) return 0;
+    if (valor === 4) return 1;
+    if (valor === 5) return 2;
+    if (valor === 6) return 3;
+    if (valor >= 7) return 4;
+    return 0;
+}
+
+function atualizarSomaAtributos() {
+    const forca = +document.getElementById('fForca').value || 0;
+    const destreza = +document.getElementById('fDestreza').value || 0;
+    const constituicao = +document.getElementById('fConstituicao').value || 0;
+    const inteligencia = +document.getElementById('fInteligencia').value || 0;
+    const sabedoria = +document.getElementById('fSabedoria').value || 0;
+    const presenca = +document.getElementById('fPresenca').value || 0;
+    const total = forca + destreza + constituicao + inteligencia + sabedoria + presenca;
+    document.getElementById('somaAtributos').textContent = total;
+    const limite = document.getElementById('fEstilo').value === 'Restringido' ? 7 : 5;
+    document.getElementById('limiteAtributos').textContent = limite;
+    if (total > limite) {
+        document.getElementById('somaAtributos').style.color = 'var(--red)';
+        document.getElementById('somaAtributos').style.fontWeight = 'bold';
+    } else {
+        document.getElementById('somaAtributos').style.color = '';
+        document.getElementById('somaAtributos').style.fontWeight = '';
+    }
 }
 
 // Sugestão automática de PV/BT conforme Grau
@@ -143,6 +207,9 @@ function renderFicha() {
         const statusBadge = { na_escola: '🏫 Na Escola', em_missao: '⚔️ Em Missão', ferido: '🏥 Ferido', ausente: '❓ Ausente' }[char.status] || '🏫 Na Escola';
         const exaustaoBar = char.exaustao > 0 ? `<span style="color:var(--red);">⚠️ Exaustão: ${char.exaustao}/5</span>` : '';
 
+        // ✅ Exibição dos atributos
+        const atributosStr = `FOR ${char.forca||1} (${calcularModificador(char.forca||1)}), DES ${char.destreza||1} (${calcularModificador(char.destreza||1)}), CON ${char.constituicao||1} (${calcularModificador(char.constituicao||1)}), INT ${char.inteligencia||1} (${calcularModificador(char.inteligencia||1)}), SAB ${char.sabedoria||1} (${calcularModificador(char.sabedoria||1)}), PRE ${char.presenca||1} (${calcularModificador(char.presenca||1)})`;
+
         container.innerHTML = `
             <div class="card-item" style="flex-direction:column; align-items:flex-start;">
                 <div style="display:flex; align-items:center; gap:12px; width:100%;">
@@ -170,6 +237,10 @@ function renderFicha() {
                 <p><strong>Domínio:</strong> ${char.dominio?.nome ? `<strong>${escapeHtml(char.dominio.nome)}</strong>: ${escapeHtml(char.dominio.desc)}` : 'Não definido'}</p>
                 <p><strong>Medos:</strong> ${escapeHtml(char.medos || 'Nenhum')}</p>
                 <p><strong>Nível de Poder:</strong> ${char.nivelPoder || 1}</p>
+                <p><strong>🏅 Honra:</strong> ${char.honra || 0} | <strong>Glória:</strong> ${char.gloria || 0}</p>
+                <p><strong>⚖️ Karma:</strong> ${char.karma || 0}</p>
+                <!-- ✅ EXIBIÇÃO DOS ATRIBUTOS -->
+                <p><strong>Atributos:</strong> ${atributosStr}</p>
                 <p><strong>⚡ Black Flashes:</strong> ${char.blackFlashCount || 0}</p>
                 <p><strong>🌀 Estado de Fluxo:</strong> ${char.fluxoAtivo ? 'Ativo' : 'Inativo'}</p>
                 ${char.notas ? `<p style="margin-top:10px; font-style:italic;">📝 ${escapeHtml(char.notas)}</p>` : ''}
@@ -226,6 +297,21 @@ function fillFormForEdit(char) {
     document.getElementById('fTecnica').value = char.tecnica || '';
     document.getElementById('fDominioNome').value = char.dominio?.nome || '';
     document.getElementById('fDominioDesc').value = char.dominio?.desc || '';
+    document.getElementById('fHonra').value = char.honra || 0;
+    document.getElementById('fGloria').value = char.gloria || 0;
+    document.getElementById('fDiario').value = char.diario || '';
+    document.getElementById('fKarma').value = char.karma || 0;
+
+    // ✅ CARREGAR ATRIBUTOS
+    document.getElementById('fForca').value = char.forca || 1;
+    document.getElementById('fDestreza').value = char.destreza || 1;
+    document.getElementById('fConstituicao').value = char.constituicao || 1;
+    document.getElementById('fInteligencia').value = char.inteligencia || 1;
+    document.getElementById('fSabedoria').value = char.sabedoria || 1;
+    document.getElementById('fPresenca').value = char.presenca || 1;
+    // Atualiza modificadores e soma
+    ['Forca','Destreza','Constituicao','Inteligencia','Sabedoria','Presenca'].forEach(attr => atualizarModificador(attr.toLowerCase()));
+    atualizarSomaAtributos();
 
     periciasTemp = (char.pericias || '').split(',').filter(Boolean).map(s => s.trim());
     cicatrizesTemp = (char.cicatrizes || '').split(',').filter(Boolean).map(s => s.trim());
@@ -260,6 +346,18 @@ function clearForm() {
     document.getElementById('fExaustao').value = 0;
     document.getElementById('fNivelPoder').value = 1;
     document.getElementById('fStatus').value = 'na_escola';
+    document.getElementById('fHonra').value = 0;
+    document.getElementById('fGloria').value = 0;
+    document.getElementById('fDiario').value = '';
+    document.getElementById('fKarma').value = 0;
+
+    // ✅ RESETAR ATRIBUTOS
+    ['fForca','fDestreza','fConstituicao','fInteligencia','fSabedoria','fPresenca'].forEach(id => {
+        document.getElementById(id).value = 1;
+    });
+    ['Forca','Destreza','Constituicao','Inteligencia','Sabedoria','Presenca'].forEach(attr => atualizarModificador(attr.toLowerCase()));
+    atualizarSomaAtributos();
+
     periciasTemp = [];
     cicatrizesTemp = [];
     feiticosTemp = [];
@@ -470,7 +568,18 @@ async function saveCharacter() {
         isPlayerCharacter: true,
         history: existing ? [...(existing.history || [])] : [],
         blackFlashCount: existing?.blackFlashCount || 0,
-        fluxoAtivo: existing?.fluxoAtivo || false
+        fluxoAtivo: existing?.fluxoAtivo || false,
+        honra: +document.getElementById('fHonra').value || 0,
+        gloria: +document.getElementById('fGloria').value || 0,
+        diario: document.getElementById('fDiario').value,
+        karma: +document.getElementById('fKarma').value || 0,
+        // ✅ ATRIBUTOS
+        forca: +document.getElementById('fForca').value || 1,
+        destreza: +document.getElementById('fDestreza').value || 1,
+        constituicao: +document.getElementById('fConstituicao').value || 1,
+        inteligencia: +document.getElementById('fInteligencia').value || 1,
+        sabedoria: +document.getElementById('fSabedoria').value || 1,
+        presenca: +document.getElementById('fPresenca').value || 1
     };
 
     if (existing) {
@@ -478,7 +587,9 @@ async function saveCharacter() {
         const fieldsToCompare = [
             'nome','origem','estilo','grau','status','hpMax','hp','eaMax','ea',
             'folego','exaustao','nivelPoder','ambicao','medos','notas','lore',
-            'aparencia','cla','tecnica'
+            'aparencia','cla','tecnica','honra','gloria','karma','diario',
+            // ✅ ATRIBUTOS NO HISTÓRICO
+            'forca','destreza','constituicao','inteligencia','sabedoria','presenca'
         ];
         fieldsToCompare.forEach(field => {
             const oldVal = existing[field] !== undefined ? String(existing[field]) : '';
@@ -511,7 +622,6 @@ async function saveCharacter() {
     chars.push(newChar);
     appState.set('characters', chars);
 
-    // ✅ LOG e NOTIFICAÇÃO
     appState.logAction(`📋 Personagem "${nome}" ${existing ? 'atualizado' : 'criado'}.`);
     appState.enviarNotificacao(`📋 Mestre atualizou a ficha de "${nome}".`);
 

@@ -19,10 +19,13 @@ const MASTER_MODULES = [
     { id: 'chat', label: '💬 Chat' },
     { id: 'faccoes', label: '🏛️ Facções' },
     { id: 'diario', label: '📖 Diário' },
-    // ✅ NOVOS MÓDULOS
+    { id: 'npc', label: '👥 NPCs' },
     { id: 'mapa', label: '🗺️ Mapa' },
     { id: 'ferramentas', label: '🛠️ Ferramentas' },
     { id: 'sala', label: '🚪 Sala' },
+    // ✅ NOVOS MÓDULOS: AVISOS E NOTAS
+    { id: 'avisos', label: '📢 Avisos' },
+    { id: 'notas', label: '📝 Notas' },
     { id: 'configuracoes', label: '⚙️ Configurações' },
 ];
 
@@ -36,9 +39,12 @@ const PLAYER_MODULES = [
     { id: 'chat', label: '💬 Chat' },
     { id: 'faccoes', label: '🏛️ Facções' },
     { id: 'diario', label: '📖 Diário' },
-    // ✅ NOVOS MÓDULOS
+    { id: 'npc', label: '👥 NPCs' },
     { id: 'mapa', label: '🗺️ Mapa' },
     { id: 'sala', label: '🚪 Sala' },
+    // ✅ NOVOS MÓDULOS: AVISOS E NOTAS
+    { id: 'avisos', label: '📢 Avisos' },
+    { id: 'notas', label: '📝 Notas' },
     { id: 'configuracoes', label: '⚙️ Configurações' },
 ];
 
@@ -120,7 +126,6 @@ function setupMenuScreen() {
         }
     });
 
-    // ✅ Botão Espectador
     if (btnEspectador) {
         btnEspectador.addEventListener('click', () => {
             console.log('👀 Clicou em Espectador');
@@ -170,7 +175,6 @@ function loadSidebar(role) {
 
     const modules = role === 'master' ? MASTER_MODULES : 
                     role === 'player' ? PLAYER_MODULES : 
-                    // Espectador vê os mesmos módulos que jogador, mas sem ações
                     PLAYER_MODULES;
 
     nav.innerHTML = modules.map(m =>

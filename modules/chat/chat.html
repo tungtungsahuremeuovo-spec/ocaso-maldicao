@@ -1,6 +1,14 @@
 <div class="panel fade-in" style="display:flex; flex-direction:column; height:70vh;">
     <div class="panel-header">💬 Chat da Sala</div>
     <div id="chatMessages" style="flex:1; overflow-y:auto; background:var(--bg-2); border-radius:6px; padding:10px; margin-bottom:10px;"></div>
+
+    <!-- Vídeo -->
+    <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px;">
+        <button class="btn btn-sm" id="btnLigarVideo">📹 Ligar Vídeo</button>
+        <video id="localVideo" autoplay muted style="width:120px; border-radius:8px; display:none;"></video>
+        <video id="remoteVideo" autoplay style="width:120px; border-radius:8px; display:none;"></video>
+    </div>
+
     <div class="flex-row">
         <input id="chatInput" placeholder="Digite sua mensagem..." style="flex:1;">
         <button class="btn btn-gold" id="btnSendChat">Enviar</button>

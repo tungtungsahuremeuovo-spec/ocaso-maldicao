@@ -17,6 +17,7 @@
             <button class="tab-btn" data-ftab="dominio">🌌 Domínio</button>
             <button class="tab-btn" data-ftab="aliados">🤝 Aliados</button>
             <button class="tab-btn" data-ftab="historico">📜 Histórico</button>
+            <button class="tab-btn" data-ftab="diario">📔 Diário</button>
         </div>
 
         <!-- ABA 1 – BÁSICO -->
@@ -95,6 +96,67 @@
             <div class="flex-row mt-1">
                 <div><label>Exaustão (0-5)</label><input type="number" id="fExaustao" value="0" min="0" max="5"></div>
                 <div><label>Nível de Poder</label><input type="number" id="fNivelPoder" value="1" min="1" max="10"></div>
+            </div>
+
+            <!-- HONRA E GLÓRIA -->
+            <div class="flex-row mt-1">
+                <div><label>🏅 Honra</label><input type="number" id="fHonra" value="0" min="0" max="100"></div>
+                <div><label>🏅 Glória</label><input type="number" id="fGloria" value="0" min="0" max="100"></div>
+            </div>
+
+            <!-- KARMA -->
+            <div class="flex-row mt-1">
+                <div><label>⚖️ Karma</label><input type="number" id="fKarma" value="0" min="-10" max="10"></div>
+            </div>
+
+            <!-- ✅ ATRIBUTOS (integrado aqui) -->
+            <label class="mt-1" style="font-weight:600; color:var(--gold);">📊 Atributos (máx 5, ou 7 para Restringido)</label>
+            <div class="flex-row" style="gap:6px; flex-wrap:wrap;">
+                <div style="flex:1; min-width:80px;">
+                    <label>FOR</label>
+                    <div style="display:flex; align-items:center; gap:4px;">
+                        <input type="number" id="fForca" value="1" min="1" max="7" style="width:50px;">
+                        <span id="modForca" style="font-size:0.8rem; color:var(--gold);">(-2)</span>
+                    </div>
+                </div>
+                <div style="flex:1; min-width:80px;">
+                    <label>DES</label>
+                    <div style="display:flex; align-items:center; gap:4px;">
+                        <input type="number" id="fDestreza" value="1" min="1" max="7" style="width:50px;">
+                        <span id="modDestreza" style="font-size:0.8rem; color:var(--gold);">(-2)</span>
+                    </div>
+                </div>
+                <div style="flex:1; min-width:80px;">
+                    <label>CON</label>
+                    <div style="display:flex; align-items:center; gap:4px;">
+                        <input type="number" id="fConstituicao" value="1" min="1" max="7" style="width:50px;">
+                        <span id="modConstituicao" style="font-size:0.8rem; color:var(--gold);">(-2)</span>
+                    </div>
+                </div>
+                <div style="flex:1; min-width:80px;">
+                    <label>INT</label>
+                    <div style="display:flex; align-items:center; gap:4px;">
+                        <input type="number" id="fInteligencia" value="1" min="1" max="5" style="width:50px;">
+                        <span id="modInteligencia" style="font-size:0.8rem; color:var(--gold);">(-2)</span>
+                    </div>
+                </div>
+                <div style="flex:1; min-width:80px;">
+                    <label>SAB</label>
+                    <div style="display:flex; align-items:center; gap:4px;">
+                        <input type="number" id="fSabedoria" value="1" min="1" max="5" style="width:50px;">
+                        <span id="modSabedoria" style="font-size:0.8rem; color:var(--gold);">(-2)</span>
+                    </div>
+                </div>
+                <div style="flex:1; min-width:80px;">
+                    <label>PRE</label>
+                    <div style="display:flex; align-items:center; gap:4px;">
+                        <input type="number" id="fPresenca" value="1" min="1" max="5" style="width:50px;">
+                        <span id="modPresenca" style="font-size:0.8rem; color:var(--gold);">(-2)</span>
+                    </div>
+                </div>
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-dim); margin-top:4px;">
+                💡 Soma atual: <span id="somaAtributos">6</span> / Limite: <span id="limiteAtributos">5</span>
             </div>
 
             <label class="mt-1">Perícias</label>
@@ -189,6 +251,12 @@
             <div id="fHistoricoList" style="max-height:300px; overflow-y:auto; font-size:0.8rem; background:var(--bg-2); padding:8px; border-radius:4px;">
                 <p class="empty-state">Nenhuma alteração registrada.</p>
             </div>
+        </div>
+
+        <!-- ABA 8 – DIÁRIO -->
+        <div id="ftab-diario" class="ftab-content" style="display:none;">
+            <label>Diário do Personagem</label>
+            <textarea id="fDiario" rows="8" placeholder="Escreva as memórias do seu personagem..."></textarea>
         </div>
 
         <button class="btn btn-gold w-full mt-3" id="btnSaveFicha">Salvar Ficha</button>

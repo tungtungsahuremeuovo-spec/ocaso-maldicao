@@ -31,6 +31,7 @@ export function init() {
     document.getElementById('btnAddToken').addEventListener('click', addToken);
     document.getElementById('btnClearMapa').addEventListener('click', clearMapa);
     document.getElementById('btnSyncMapa').addEventListener('click', syncMapa);
+    document.getElementById('btnImportarCombate').addEventListener('click', importarDoCombate);
     document.getElementById('gridSize').addEventListener('change', (e) => {
         gridSize = parseInt(e.target.value) || 10;
         saveMapa();
@@ -119,6 +120,28 @@ function clearMapa() {
 function syncMapa() {
     appState.enviarNotificacao('🗺️ Mapa atualizado pelo mestre.');
     saveMapa();
+}
+
+// ========== INTEGRAÇÃO COM COMBATE ==========
+function importarDoCombate() {
+    const combat = appState.get('combat');
+    if (!combat || !combat.combatants.length) {
+        return window.showToast?.('⚠️ Nenhum combatente no combate.');
+    }
+    const confirmar = confirm(`Importar ${combat.combatants.length} combatentes para o mapa?`);
+    if (!confirmar) return;
+    combat.combatants.forEach((c, i) => {
+        tokens.push({
+            id: generateId(),
+            nome: c.nome,
+            color: '#c9a24e',
+            x: i % gridSize,
+            y: Math.floor(i / gridSize)
+        });
+    });
+    saveMapa();
+    renderMapa();
+    window.showToast?.('✅ Combatentes importados para o mapa!');
 }
 
 function handleCanvasClick(e) {

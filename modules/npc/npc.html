@@ -1,0 +1,21 @@
+<div class="panel fade-in">
+    <div class="panel-header">👥 NPCs</div>
+
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+        <input id="npcNome" placeholder="Nome do NPC" style="flex:1;">
+        <select id="npcTipo">
+            <option>Humano</option>
+            <option>Maldição</option>
+            <option>Espírito</option>
+            <option>Shikigami</option>
+            <option>Inimigo</option>
+            <option>Aliado</option>
+        </select>
+        <input type="number" id="npcGrau" value="4" placeholder="Grau" style="width:60px;">
+        <button class="btn btn-gold" id="btnAddNPC">➕ Adicionar</button>
+    </div>
+
+    <div class="list-container" id="npcList">
+        <div class="empty-state">Nenhum NPC cadastrado.</div>
+    </div>
+</div>
