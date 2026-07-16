@@ -2,10 +2,17 @@
     <div class="panel-header">🚪 Sala de Espera</div>
     <div id="salaStatus">
         <p>Status: <strong id="sessionStatus">Aguardando...</strong></p>
+        <p>Presença: <span id="presencaStatus">🟡 Conectando...</span></p>
         <div id="jogadoresLista">
             <p class="empty-state">Nenhum jogador conectado.</p>
         </div>
         <button class="btn btn-gold" id="btnIniciarSessao" style="display:none;">▶️ Iniciar Sessão</button>
         <button class="btn btn-red" id="btnEncerrarSessao" style="display:none;">⏹️ Encerrar Sessão</button>
+        <button class="btn btn-sm" id="btnCopiarIdSala" style="display:none;">📋 Copiar ID da Sala</button>
+    </div>
+    <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:12px;">
+        <button class="btn btn-sm" id="btnMarcarPresenca">✅ Marcar Presença</button>
+        <button class="btn btn-sm" id="btnInspiracao">💡 Inspiração Coletiva</button>
+        <div id="presencaLista" style="margin-top:8px; font-size:0.85rem;"></div>
     </div>
 </div>
