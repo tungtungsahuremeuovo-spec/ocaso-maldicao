@@ -31,6 +31,13 @@
         <span id="fugirStatus" style="font-size:0.8rem;color:var(--text-dim);margin-left:8px;"></span>
     </div>
 
+    <!-- Ações Preparadas e Mestre Invisível -->
+    <div class="mt-2" style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-sm" id="btnAcaoPreparada">⚡ Ação Preparada</button>
+        <button class="btn btn-sm" id="btnMestreInvisivel">🕵️ Mestre Invisível</button>
+        <span id="mestreInvisivelStatus" style="font-size:0.8rem;color:var(--text-dim);">👁️ Visível</span>
+    </div>
+
     <div class="grid-2 fade-in">
         <div class="panel">
             <div class="panel-header">⚔️ Adicionar Combatente</div>
@@ -80,7 +87,6 @@
         </div>
     </div>
 
-    <!-- Histórico da Iniciativa -->
     <div class="panel mt-2">
         <div class="panel-header">📜 Histórico da Iniciativa</div>
         <div id="historicoRodadas" style="max-height:150px; overflow-y:auto; font-size:0.8rem; background:var(--bg-2); padding:8px; border-radius:4px;">
