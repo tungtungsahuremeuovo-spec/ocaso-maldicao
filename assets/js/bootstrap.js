@@ -23,9 +23,10 @@ const MASTER_MODULES = [
     { id: 'mapa', label: '🗺️ Mapa' },
     { id: 'ferramentas', label: '🛠️ Ferramentas' },
     { id: 'sala', label: '🚪 Sala' },
-    // ✅ NOVOS MÓDULOS: AVISOS E NOTAS
     { id: 'avisos', label: '📢 Avisos' },
     { id: 'notas', label: '📝 Notas' },
+    // ✅ BUSCA (Ctrl+K)
+    { id: 'busca', label: '🔍 Buscar (Ctrl+K)' },
     { id: 'configuracoes', label: '⚙️ Configurações' },
 ];
 
@@ -42,9 +43,9 @@ const PLAYER_MODULES = [
     { id: 'npc', label: '👥 NPCs' },
     { id: 'mapa', label: '🗺️ Mapa' },
     { id: 'sala', label: '🚪 Sala' },
-    // ✅ NOVOS MÓDULOS: AVISOS E NOTAS
     { id: 'avisos', label: '📢 Avisos' },
     { id: 'notas', label: '📝 Notas' },
+    { id: 'busca', label: '🔍 Buscar (Ctrl+K)' },
     { id: 'configuracoes', label: '⚙️ Configurações' },
 ];
 
@@ -167,6 +168,22 @@ function initializeApp() {
             appState.set('campaign', campaignInput.value);
         });
     }
+
+    // ✅ TOGGLE SIDEBAR
+    const btnToggle = document.getElementById('btnToggleSidebar');
+    if (btnToggle) {
+        btnToggle.addEventListener('click', () => {
+            const sidebar = document.getElementById('sidebar');
+            const content = document.getElementById('content');
+            const isHidden = sidebar.style.display === 'none';
+            sidebar.style.display = isHidden ? '' : 'none';
+            content.style.marginLeft = isHidden ? 'var(--sidebar-width)' : '0';
+            btnToggle.textContent = isHidden ? '⬅️ Ocultar barra' : '➡️ Mostrar barra';
+        });
+    }
+
+    // ✅ ATALHOS DE TECLADO
+    import('./atalhos.js').then(mod => mod.init()).catch(console.warn);
 }
 
 function loadSidebar(role) {

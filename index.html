@@ -9,7 +9,6 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛩️</text></svg>">
 </head>
 <body>
-    <!-- TELA DE MENU -->
     <div id="menu-screen">
         <div class="menu-container">
             <h1 class="menu-title">⛩️ Ocaso & Maldição</h1>
@@ -25,7 +24,6 @@
                     <span>Entrar como Jogador</span>
                     <small>Importar arquivo da campanha</small>
                 </button>
-                <!-- ✅ BOTÃO ESPECTADOR -->
                 <button id="btnEspectador" class="menu-btn" style="border-color:#666;">
                     <span class="icon">👀</span>
                     <span>Espectador</span>
@@ -36,7 +34,6 @@
         </div>
     </div>
 
-    <!-- APLICATIVO -->
     <div id="app" style="display:none;">
         <nav id="sidebar" aria-label="Navegação principal">
             <div class="sidebar-header">
@@ -50,6 +47,8 @@
             <div class="sidebar-footer">
                 <input id="campaignName" class="campaign-input" value="A Sombra do Dragão" aria-label="Nome da campanha">
                 <span id="saveIndicator">💾 Salvo</span>
+                <!-- ✅ BOTÃO TOGGLE SIDEBAR -->
+                <button id="btnToggleSidebar" class="btn btn-sm" style="margin-top:4px;">⬅️ Ocultar barra</button>
                 <button id="btnLogout" class="btn btn-sm btn-red w-full mt-1" style="display:none;">↩️ Sair / Trocar Modo</button>
             </div>
         </nav>
@@ -61,9 +60,7 @@
     <div id="toastContainer" class="toast-container" aria-live="assertive"></div>
     <input type="file" id="importFileInput" accept=".ocaso,.json" style="display:none">
 
-    <!-- Carrega a biblioteca PeerJS antes dos módulos -->
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
-    <!-- Módulo principal (bootstrap) -->
     <script type="module" src="assets/js/bootstrap.js"></script>
 </body>
 </html>

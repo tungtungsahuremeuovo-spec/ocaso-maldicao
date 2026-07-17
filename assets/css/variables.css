@@ -1,31 +1,50 @@
+/* assets/css/variables.css */
 :root {
-    --bg-0: #0d0c11;
-    --bg-1: #131218;
-    --bg-2: #1a1822;
-    --bg-3: #211f2b;
-    --bg-4: #292634;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-title: 'Cinzel', 'Georgia', serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+    /* Cores */
     --gold: #c9a24e;
-    --gold-light: #e0c478;
-    --gold-dark: #8b691f;
-    --red: #c44b4b;
-    --red-light: #e06464;
+    --gold-light: #e8c97a;
+    --gold-dark: #a8822a;
     --purple: #7b4fa0;
-    --purple-light: #9b6fc4;
-    --blue: #4a7fa8;
+    --purple-light: #b088d8;
+    --red: #c44b4b;
     --green: #5a9e6f;
-    --text: #ddd8c8;
+    --blue: #4a7fa8;
+
+    /* Tema escuro (padrão) */
+    --bg-0: #0d0c11;
+    --bg-1: #1a1822;
+    --bg-2: #242130;
+    --bg-3: #2f2b3d;
+    --bg-4: #3a3550;
+    --text: #e0dcd0;
     --text-dim: #a09b8f;
-    --text-muted: #6b6560;
-    --border: #2a2733;
-    --border-light: #3a3645;
+    --text-muted: #6b665a;
+    --border: #2f2b3d;
+    --border-light: #4a4558;
+    --shadow: 0 4px 16px rgba(0,0,0,0.4);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
+    --radius: 12px;
     --radius-sm: 6px;
-    --radius: 8px;
-    --radius-lg: 12px;
-    --shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
-    --font-body: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    --font-title: 'Georgia', 'Times New Roman', serif;
-    --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
     --transition: 0.2s ease;
-    --sidebar-width: 260px;
+    --sidebar-width: 220px;
+}
+
+/* Tema claro */
+[data-theme="light"] {
+    --bg-0: #f5f3f0;
+    --bg-1: #e8e4de;
+    --bg-2: #dcd8d0;
+    --bg-3: #d0cbc2;
+    --bg-4: #c4beb4;
+    --text: #1a1822;
+    --text-dim: #4a4558;
+    --text-muted: #6b665a;
+    --border: #c4beb4;
+    --border-light: #d0cbc2;
+    --shadow: 0 4px 16px rgba(0,0,0,0.1);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.15);
 }

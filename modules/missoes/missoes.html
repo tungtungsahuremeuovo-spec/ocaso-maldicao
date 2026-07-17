@@ -12,6 +12,33 @@
     </div>
     <div class="panel" style="grid-column: 1 / -1;">
         <div class="panel-header">📜 Quadro de Missões</div>
-        <div class="list-container" id="questList"><div class="empty-state">Nenhuma missão.</div></div>
+        <!-- ✅ FILTROS -->
+        <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
+            <input id="filtroMissoes" placeholder="Filtrar missões..." style="flex:1;">
+            <select id="filtroStatusMissao">
+                <option value="">Todos</option>
+                <option value="Ativa">Ativa</option>
+                <option value="Concluída">Concluída</option>
+                <option value="Falha">Falha</option>
+            </select>
+            <button class="btn btn-sm" id="btnLimparFiltros">🧹 Limpar</button>
+        </div>
+        <div class="list-container" id="questList"><div class="empty-state">Nenhuma missão disponível.</div></div>
+    </div>
+</div>
+
+<div class="panel fade-in">
+    <div class="panel-header">⚙️ Configurações</div>
+    <div class="flex-row">
+        <button class="btn btn-gold" id="btnExport">📤 Exportar Campanha</button>
+        <button class="btn btn-gold" id="btnExportPlayer">🎭 Exportar Pacote do Jogador</button>
+        <button class="btn" id="btnImport">📥 Importar Campanha</button>
+        <button class="btn btn-red" id="btnReset">⚠️ Resetar Tudo</button>
+    </div>
+    <div class="mt-2" style="font-size:0.8rem;color:var(--text-dim);">
+        <p>💾 Salvamento automático ativo.</p>
+        <p>📁 Os dados ficam armazenados no seu navegador (localStorage).</p>
+        <p>🔒 Nenhum dado é enviado para servidores externos.</p>
+        <p><strong>Modo atual:</strong> <span id="currentRole"></span></p>
     </div>
 </div>

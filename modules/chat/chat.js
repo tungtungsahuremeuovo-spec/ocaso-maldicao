@@ -2,20 +2,9 @@
 import appState from '../../assets/js/app.js';
 import { escapeHtml } from '../../core/utils/utils.js';
 
-let localStream = null;
-let remoteStream = null;
-let peerConnection = null;
-let isCallActive = false;
-
-const iceServers = {
-    iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
-    ]
-};
+let typingTimeout = null;
 
 export function init() {
-    // Inicializa histórico do chat
     if (!appState.get('chatHistory')) appState.set('chatHistory', []);
     renderHistoricoChat();
     appState.subscribe('chatHistory', renderHistoricoChat);
@@ -25,62 +14,53 @@ export function init() {
         if (e.key === 'Enter') enviarMensagem();
     });
 
-    // Vídeo
-    document.getElementById('btnLigarVideo').addEventListener('click', iniciarVideo);
-    document.getElementById('btnDesligarVideo').addEventListener('click', desligarVideo);
+    // ✅ Indicador de digitando
+    const chatInput = document.getElementById('chatInput');
+    chatInput.addEventListener('focus', () => enviarDigitando(true));
+    chatInput.addEventListener('blur', () => enviarDigitando(false));
+    chatInput.addEventListener('input', () => {
+        if (chatInput.value.length > 0) {
+            enviarDigitando(true);
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => enviarDigitando(false), 2000);
+        }
+    });
 
-    // Listener para mensagens recebidas via P2P (incluindo sinalização WebRTC)
+    // Listener para mensagens recebidas
     window._handleChatMessage = (msg) => {
         if (msg.type === 'chat') {
             adicionarMensagem(msg.autor, msg.texto, msg.timestamp);
+            // Som de mensagem
+            playSound('message');
         }
-        if (msg.type === 'video-offer') {
-            handleVideoOffer(msg);
-        }
-        if (msg.type === 'video-answer') {
-            handleVideoAnswer(msg);
-        }
-        if (msg.type === 'video-ice') {
-            handleIceCandidate(msg);
-        }
-        if (msg.type === 'video-hangup') {
-            desligarVideo();
+        if (msg.type === 'typing') {
+            atualizarIndicadorDigitando(msg.autor, msg.ativo);
         }
     };
 
-    // Se já houver conexão, escuta mensagens
     if (appState.connection) {
         appState.connection.on('data', (msg) => {
             if (msg.type === 'chat') {
                 adicionarMensagem(msg.autor, msg.texto, msg.timestamp);
+                playSound('message');
             }
-            if (msg.type === 'video-offer') {
-                handleVideoOffer(msg);
-            }
-            if (msg.type === 'video-answer') {
-                handleVideoAnswer(msg);
-            }
-            if (msg.type === 'video-ice') {
-                handleIceCandidate(msg);
-            }
-            if (msg.type === 'video-hangup') {
-                desligarVideo();
+            if (msg.type === 'typing') {
+                atualizarIndicadorDigitando(msg.autor, msg.ativo);
             }
         });
     }
-
-    // Mestre: retransmite sinalização para todos os conectados
     if (appState.peer && appState.getRole() === 'master') {
         appState.peer.on('connection', (conn) => {
             conn.on('data', (msg) => {
-                // Retransmite mensagens de sinalização para todos (broadcast)
-                if (msg.type && msg.type.startsWith('video-')) {
+                if (msg.type === 'chat') {
+                    adicionarMensagem(msg.autor, msg.texto, msg.timestamp);
+                    playSound('message');
                     if (appState.connection && appState.connection.open) {
                         appState.connection.send(msg);
                     }
                 }
-                if (msg.type === 'chat') {
-                    adicionarMensagem(msg.autor, msg.texto, msg.timestamp);
+                if (msg.type === 'typing') {
+                    atualizarIndicadorDigitando(msg.autor, msg.ativo);
                     if (appState.connection && appState.connection.open) {
                         appState.connection.send(msg);
                     }
@@ -90,9 +70,6 @@ export function init() {
     }
 }
 
-// ============================================================
-// CHAT
-// ============================================================
 function enviarMensagem() {
     const input = document.getElementById('chatInput');
     const texto = input.value.trim();
@@ -108,6 +85,8 @@ function enviarMensagem() {
     }
     adicionarMensagem(msg.autor, msg.texto, msg.timestamp);
     input.value = '';
+    enviarDigitando(false);
+    playSound('message');
 }
 
 function adicionarMensagem(autor, texto, timestamp) {
@@ -134,162 +113,58 @@ function renderHistoricoChat() {
 }
 
 // ============================================================
-// WEBRTC – VÍDEO/VOZ FUNCIONAL
+// ✅ INDICADOR DE "DIGITANDO..."
 // ============================================================
-async function iniciarVideo() {
-    if (isCallActive) return;
+function enviarDigitando(ativo) {
+    if (!appState.connection || !appState.connection.open) return;
+    appState.connection.send({
+        type: 'typing',
+        ativo,
+        autor: appState.getRole() === 'master' ? 'Mestre' : 'Jogador'
+    });
+}
 
-    try {
-        // Obtém stream local (câmera + microfone)
-        localStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true
-        });
-
-        document.getElementById('localVideo').srcObject = localStream;
-        document.getElementById('localVideo').style.display = 'block';
-        document.getElementById('btnLigarVideo').style.display = 'none';
-        document.getElementById('btnDesligarVideo').style.display = '';
-        document.getElementById('videoStatus').textContent = '🟢 Conectando...';
-        document.getElementById('videoStatus').style.color = 'var(--gold)';
-
-        // Cria PeerConnection
-        peerConnection = new RTCPeerConnection(iceServers);
-
-        // Adiciona tracks locais
-        localStream.getTracks().forEach(track => {
-            peerConnection.addTrack(track, localStream);
-        });
-
-        // Recebe stream remoto
-        peerConnection.ontrack = (event) => {
-            remoteStream = event.streams[0];
-            document.getElementById('remoteVideo').srcObject = remoteStream;
-            document.getElementById('remoteVideo').style.display = 'block';
-            document.getElementById('videoStatus').textContent = '🟢 Chamada ativa';
-            document.getElementById('videoStatus').style.color = 'var(--green)';
-            isCallActive = true;
-        };
-
-        // Coleta candidatos ICE e envia
-        peerConnection.onicecandidate = (event) => {
-            if (event.candidate) {
-                enviarSinalizacao({
-                    type: 'video-ice',
-                    candidate: event.candidate
-                });
-            }
-        };
-
-        // Cria oferta (apenas o mestre inicia)
-        if (appState.getRole() === 'master') {
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-            enviarSinalizacao({
-                type: 'video-offer',
-                sdp: offer
-            });
-        } else {
-            // Jogador aguarda oferta do mestre
-            document.getElementById('videoStatus').textContent = '🟡 Aguardando mestre...';
+function atualizarIndicadorDigitando(autor, ativo) {
+    let el = document.getElementById('chatTyping');
+    if (ativo) {
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'chatTyping';
+            el.style.cssText = 'font-size:0.8rem; color:var(--text-dim); margin-top:2px;';
+            const container = document.getElementById('chatMessages');
+            if (container) container.appendChild(el);
         }
-
-    } catch (err) {
-        console.error('Erro ao iniciar vídeo:', err);
-        window.showToast?.('❌ Erro ao acessar câmera/mic: ' + err.message);
-        desligarVideo();
+        el.textContent = `${autor} está digitando...`;
+    } else {
+        if (el) el.textContent = '';
     }
-}
-
-function desligarVideo() {
-    isCallActive = false;
-
-    // Fecha peer connection
-    if (peerConnection) {
-        peerConnection.close();
-        peerConnection = null;
-    }
-
-    // Para tracks locais
-    if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-        localStream = null;
-    }
-
-    // Limpa streams remotas
-    if (remoteStream) {
-        remoteStream.getTracks().forEach(track => track.stop());
-        remoteStream = null;
-    }
-
-    // Reseta UI
-    document.getElementById('localVideo').srcObject = null;
-    document.getElementById('localVideo').style.display = 'none';
-    document.getElementById('remoteVideo').srcObject = null;
-    document.getElementById('remoteVideo').style.display = 'none';
-    document.getElementById('btnLigarVideo').style.display = '';
-    document.getElementById('btnDesligarVideo').style.display = 'none';
-    document.getElementById('videoStatus').textContent = '🔴 Desconectado';
-    document.getElementById('videoStatus').style.color = 'var(--text-dim)';
-
-    // Notifica os outros
-    enviarSinalizacao({ type: 'video-hangup' });
-    window.showToast?.('📹 Chamada encerrada.');
 }
 
 // ============================================================
-// SINALIZAÇÃO WEBRTC (via PeerJS)
+// ✅ SONS DE NOTIFICAÇÃO
 // ============================================================
-function enviarSinalizacao(msg) {
-    if (appState.connection && appState.connection.open) {
-        appState.connection.send(msg);
-    }
-}
-
-// Recebe oferta do mestre (jogador)
-async function handleVideoOffer(msg) {
-    if (appState.getRole() !== 'player') return;
-    if (!peerConnection) {
-        // Se não tiver stream local, inicia
-        await iniciarVideo();
-    }
-    if (!peerConnection) return;
-
+function playSound(type) {
     try {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(msg.sdp));
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-        enviarSinalizacao({
-            type: 'video-answer',
-            sdp: answer
-        });
-    } catch (err) {
-        console.error('Erro ao processar oferta:', err);
-    }
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        if (type === 'turn') {
+            osc.frequency.value = 800;
+            gain.gain.value = 0.2;
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.1);
+        } else if (type === 'message') {
+            osc.frequency.value = 600;
+            gain.gain.value = 0.15;
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.08);
+        } else if (type === 'critical') {
+            osc.frequency.value = 1000;
+            gain.gain.value = 0.3;
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.15);
+        }
+    } catch(e) { /* silencioso */ }
 }
-
-// Recebe resposta do jogador (mestre)
-async function handleVideoAnswer(msg) {
-    if (appState.getRole() !== 'master') return;
-    if (!peerConnection) return;
-    try {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(msg.sdp));
-    } catch (err) {
-        console.error('Erro ao processar resposta:', err);
-    }
-}
-
-// Recebe candidato ICE
-async function handleIceCandidate(msg) {
-    if (!peerConnection) return;
-    try {
-        await peerConnection.addIceCandidate(new RTCIceCandidate(msg.candidate));
-    } catch (err) {
-        console.error('Erro ao adicionar ICE candidate:', err);
-    }
-}
-
-// Listener para quando o módulo é descarregado
-window.addEventListener('beforeunload', () => {
-    desligarVideo();
-});

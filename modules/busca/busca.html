@@ -1,0 +1,7 @@
+<div class="modal-overlay" id="buscaModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; display:flex; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-1); border-radius:12px; padding:20px; width:90%; max-width:600px;">
+        <input id="buscaInput" placeholder="Pesquisar em todos os módulos..." style="width:100%; padding:12px; font-size:1.2rem; border:1px solid var(--border); border-radius:8px; background:var(--bg-2); color:var(--text);">
+        <div id="buscaResultados" style="margin-top:12px; max-height:400px; overflow-y:auto; font-size:0.9rem;"></div>
+        <button class="btn btn-sm mt-2" onclick="document.getElementById('buscaModal').style.display='none'">Fechar (Esc)</button>
+    </div>
+</div>
