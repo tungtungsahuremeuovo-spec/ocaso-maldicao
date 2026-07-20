@@ -1,45 +1,21 @@
 <div class="panel fade-in">
-    <div class="panel-header">📊 Painel da Campanha</div>
-    <p style="color:var(--text-dim);">Bem-vindo ao painel principal. Aqui você encontra um resumo da campanha.</p>
-
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-top:16px;">
-        <div style="background:var(--bg-2); padding:16px; border-radius:8px; text-align:center;">
-            <h3>👥 Personagens</h3>
-            <p id="totalPersonagens" style="font-size:2rem; color:var(--gold);">0</p>
+    <div class="panel-header">🏠 Painel</div>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:16px;">
+        <div class="panel" style="background:var(--bg-2);">
+            <div class="panel-header" style="font-size:1rem;">👥 Personagens</div>
+            <div id="personagensCount">0</div>
         </div>
-        <div style="background:var(--bg-2); padding:16px; border-radius:8px; text-align:center;">
-            <h3>🏴 Missões</h3>
-            <p id="totalMissoes" style="font-size:2rem; color:var(--gold);">0</p>
+        <div class="panel" style="background:var(--bg-2);">
+            <div class="panel-header" style="font-size:1rem;">🏴 Missões</div>
+            <div id="missoesCount">0</div>
         </div>
-        <div style="background:var(--bg-2); padding:16px; border-radius:8px; text-align:center;">
-            <h3>👥 NPCs</h3>
-            <p id="totalNPCs" style="font-size:2rem; color:var(--gold);">0</p>
-        </div>
-        <div style="background:var(--bg-2); padding:16px; border-radius:8px; text-align:center;">
-            <h3>⚡ Black Flashes</h3>
-            <p id="totalBF" style="font-size:2rem; color:var(--gold);">0</p>
+        <div class="panel" style="background:var(--bg-2);">
+            <div class="panel-header" style="font-size:1rem;">⚔️ Combates</div>
+            <div id="combatesCount">0</div>
         </div>
     </div>
-
-    <!-- Gráficos -->
-    <div class="panel" style="margin-top:16px;">
-        <div class="panel-header">📊 Estatísticas da Campanha</div>
-        <div style="display:flex; flex-wrap:wrap; gap:20px;">
-            <div style="flex:1; min-width:200px;">
-                <canvas id="danoChart" style="max-width:300px; max-height:200px;"></canvas>
-            </div>
-            <div style="flex:1; min-width:200px;">
-                <canvas id="bfChart" style="max-width:300px; max-height:200px;"></canvas>
-            </div>
-        </div>
-        <div id="estatisticasText" style="margin-top:10px; font-size:0.9rem;"></div>
-    </div>
-
-    <!-- Últimos Eventos -->
-    <div class="panel" style="margin-top:16px;">
-        <div class="panel-header">📜 Últimos Eventos</div>
-        <div id="ultimosEventos" style="max-height:200px; overflow-y:auto; font-size:0.85rem; background:var(--bg-2); padding:10px; border-radius:6px;">
-            <p class="empty-state">Nenhum evento recente.</p>
-        </div>
+    <div class="panel mt-2">
+        <div class="panel-header">📊 Estatísticas</div>
+        <div id="estatisticasText" style="font-size:0.9rem; color:var(--text-dim);">Carregando...</div>
     </div>
 </div>
