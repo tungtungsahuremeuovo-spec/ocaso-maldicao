@@ -116,18 +116,28 @@ function drawGridAndTokens() {
         const x = token.x * cellSize + cellSize/2;
         const y = token.y * cellSize + cellSize/2;
         const radius = cellSize * 0.4;
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = token.color || '#c9a24e';
-        ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.fillStyle = '#fff';
-        ctx.font = `${radius}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(token.nome.charAt(0).toUpperCase(), x, y + 1);
+
+        if (token.imagem) {
+            const img = new Image();
+            img.onload = () => {
+                ctx.drawImage(img, x - radius, y - radius, radius*2, radius*2);
+            };
+            img.src = token.imagem;
+        } else {
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = token.color || '#c9a24e';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.font = `${radius}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(token.nome.charAt(0).toUpperCase(), x, y + 1);
+        }
+
         if (token.id === selectedTokenId) {
             ctx.strokeStyle = '#ff0';
             ctx.lineWidth = 3;
@@ -160,11 +170,32 @@ function addToken() {
     const nome = prompt('Nome do token:', 'Combatente');
     if (!nome) return;
     const color = prompt('Cor (ex: #ff0000):', '#c9a24e');
-    const x = Math.floor(Math.random() * (gridSize - 1));
-    const y = Math.floor(Math.random() * (gridSize - 1));
-    tokens.push({ id: generateId(), nome, color: color || '#c9a24e', x, y });
-    saveMapa();
-    renderMapa();
+
+    // Upload de imagem para o token
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const x = Math.floor(Math.random() * (gridSize - 1));
+            const y = Math.floor(Math.random() * (gridSize - 1));
+            tokens.push({
+                id: generateId(),
+                nome,
+                color: color || '#c9a24e',
+                x, y,
+                imagem: ev.target.result
+            });
+            saveMapa();
+            renderMapa();
+            window.showToast?.('🖼️ Token com imagem adicionado!');
+        };
+        reader.readAsDataURL(file);
+    };
+    input.click();
 }
 
 function clearMapa() {

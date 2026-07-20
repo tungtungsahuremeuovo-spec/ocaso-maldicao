@@ -1,0 +1,17 @@
+<div class="panel fade-in">
+    <div class="panel-header">💎 Loot</div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+        <select id="lootGrau">
+            <option value="4">4º Grau</option>
+            <option value="3">3º Grau</option>
+            <option value="2">2º Grau</option>
+            <option value="1">1º Grau</option>
+            <option value="E">Especial</option>
+        </select>
+        <button class="btn btn-gold" id="btnGerarLoot">🎲 Gerar Loot</button>
+        <button class="btn" id="btnDistribuirLoot">🎲 Rolar para distribuir</button>
+    </div>
+    <div id="lootResultado" style="background:var(--bg-2); padding:12px; border-radius:6px; max-height:300px; overflow-y:auto;">
+        <p class="empty-state">Nenhum loot gerado.</p>
+    </div>
+</div>

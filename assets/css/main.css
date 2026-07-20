@@ -357,3 +357,141 @@ textarea { resize: vertical; min-height: 70px; }
 .menu-btn.player-btn { border-color: var(--purple); }
 .menu-btn.player-btn:hover { border-color: var(--purple-light); box-shadow: 0 0 24px rgba(123,79,160,0.3); }
 .menu-footer { margin-top: 50px; font-size: 0.75rem; color: var(--text-muted); }
+
+/* ===== RESPONSIVIDADE ===== */
+@media (max-width: 768px) {
+    #sidebar {
+        width: 60px;
+        min-width: 60px;
+    }
+    #sidebar .sidebar-header h1,
+    #sidebar .sidebar-header small,
+    #sidebar .sidebar-header .logo {
+        font-size: 0;
+    }
+    #sidebar .sidebar-header .logo {
+        font-size: 1.5rem;
+    }
+    #sidebar .sidebar-header {
+        padding: 10px 8px;
+        justify-content: center;
+    }
+    .sidebar-nav a {
+        font-size: 0.7rem;
+        padding: 8px 6px;
+        justify-content: center;
+    }
+    .sidebar-nav a .badge {
+        display: none;
+    }
+    #content {
+        margin-left: 60px;
+        padding: 12px 16px;
+    }
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
+    .flex-row {
+        flex-direction: column;
+    }
+    .flex-row > * {
+        min-width: unset;
+        width: 100%;
+    }
+    .panel {
+        padding: 12px;
+    }
+    .panel-header {
+        font-size: 1rem;
+    }
+    .tab-nav .tab-btn {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+    }
+    .dice-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 0.9rem;
+    }
+    #campaignName {
+        font-size: 0.8rem;
+        padding: 4px 6px;
+        width: 100%;
+    }
+    .btn {
+        font-size: 0.75rem;
+        padding: 6px 10px;
+    }
+    #sidebar .sidebar-footer {
+        padding: 8px;
+    }
+    #sidebar .sidebar-footer .btn {
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 480px) {
+    #content {
+        margin-left: 0;
+        padding: 8px 10px;
+    }
+    #sidebar {
+        width: 100%;
+        min-width: unset;
+        height: auto;
+        position: relative;
+        flex-direction: row;
+        flex-wrap: wrap;
+        border-right: none;
+        border-bottom: 2px solid var(--gold-dark);
+        padding: 4px 8px;
+    }
+    #sidebar .sidebar-header {
+        flex: 1;
+        padding: 4px 0;
+    }
+    #sidebar .sidebar-header h1 {
+        font-size: 0.9rem;
+    }
+    #sidebar .sidebar-header small {
+        font-size: 0.6rem;
+    }
+    #sidebar .sidebar-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 4px 0;
+        width: 100%;
+    }
+    #sidebar .sidebar-nav a {
+        font-size: 0.65rem;
+        padding: 4px 8px;
+        margin: 0;
+        flex: 0 0 auto;
+    }
+    #sidebar .sidebar-footer {
+        width: 100%;
+        padding: 4px 0;
+        border-top: none;
+    }
+    #sidebar .sidebar-footer .campaign-input {
+        font-size: 0.7rem;
+        padding: 4px 6px;
+    }
+    #sidebar .sidebar-footer .btn {
+        font-size: 0.65rem;
+        padding: 4px 6px;
+    }
+    .panel-header {
+        font-size: 0.9rem;
+    }
+    .tab-nav .tab-btn {
+        font-size: 0.6rem;
+        padding: 3px 6px;
+    }
+    .dice-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 0.8rem;
+    }
+}

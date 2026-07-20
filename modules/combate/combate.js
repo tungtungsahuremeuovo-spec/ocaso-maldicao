@@ -5,7 +5,11 @@ import DiceEngine from '../../core/engine/diceEngine.js';
 import { generateId, escapeHtml } from '../../core/utils/utils.js';
 
 let combatEngine;
-let historico = []; // array de {rodada, acoes: [{nome, acao}]}
+let historico = [];
+let acoesPreparadas = {};
+let mestreInvisivel = false;
+let cronometroInterval = null;
+let tempoRestante = 0;
 
 function getPlayerCharacter() {
     return appState.get('characters').find(c => c.isPlayerCharacter) || null;
@@ -14,7 +18,6 @@ function getPlayerCharacter() {
 export function init() {
     combatEngine = new CombatEngine(appState);
 
-    // Carrega histórico salvo
     const saved = appState.get('combat');
     if (saved && saved.historico) historico = saved.historico;
     renderHistorico();
@@ -29,20 +32,24 @@ export function init() {
     document.getElementById('btnFugir').addEventListener('click', fugirCombate);
     document.getElementById('btnExportCombate').addEventListener('click', exportarCombate);
     document.getElementById('btnImportCombate').addEventListener('click', importarCombate);
+    document.getElementById('btnAcaoPreparada').addEventListener('click', definirAcaoPreparada);
+    document.getElementById('btnMestreInvisivel').addEventListener('click', toggleMestreInvisivel);
+
+    // Cronômetro
+    document.getElementById('btnIniciarCronometro').addEventListener('click', iniciarCronometro);
+    document.getElementById('btnPararCronometro').addEventListener('click', pararCronometro);
 
     window._quickRoll = quickRoll;
     window._updateCombHp = updateCombHp;
     window._removeComb = removeCombatant;
     window._aplicarDano = aplicarDano;
     window._editIniciativa = editIniciativa;
+    window._toggleReacao = toggleReacao;
 
     renderList();
     appState.subscribe('combat', renderList);
 }
 
-// ============================================================
-// RENDERIZAÇÃO
-// ============================================================
 function renderList() {
     const combat = appState.get('combat');
     if (!combat) return;
@@ -65,11 +72,7 @@ function renderList() {
         const conds = (c.condicoes || []).map(cond =>
             `<span class="tag red">${escapeHtml(cond.nome)} (${cond.restante})</span>`
         ).join(' ');
-
-        // Reação gasta (checkbox)
         const reacaoChecked = c.reacaoGasta ? 'checked' : '';
-
-        // Último golpe
         const derrubadoPor = c.derrotadoPor ? ` (derrubado por ${escapeHtml(c.derrotadoPor)})` : '';
 
         return `
@@ -97,7 +100,6 @@ function renderList() {
         </div>`;
     }).join('');
 
-    // Atualiza os listeners dos checkboxes de reação
     document.querySelectorAll('.reacao-check').forEach(cb => {
         cb.addEventListener('change', (e) => {
             const id = e.target.dataset.id;
@@ -107,9 +109,6 @@ function renderList() {
     });
 }
 
-// ============================================================
-// AÇÕES DO COMBATE
-// ============================================================
 function addCombatant() {
     const nome = document.getElementById('combNome').value.trim();
     if (!nome) return window.showToast?.('⚠️ Nome obrigatório');
@@ -136,10 +135,10 @@ function rollAll() {
 }
 
 function nextTurn() {
+    pararCronometro();
     const current = combatEngine.nextTurn();
     if (current) {
         const combat = appState.get('combat');
-        // Decrementa condições
         combat.combatants.forEach(c => {
             if (c.condicoes && c.condicoes.length) {
                 c.condicoes = c.condicoes.filter(cond => {
@@ -147,10 +146,10 @@ function nextTurn() {
                     return cond.restante > 0;
                 });
             }
-            // Reseta Reação gasta no início do turno
             c.reacaoGasta = false;
             c.fluxoAtivo = false;
         });
+        delete acoesPreparadas[current.id];
         appState.set('combat', combat);
         window.showToast?.(`▶️ Turno de: ${current.nome}`);
         appState.enviarNotificacao(`▶️ Turno de ${current.nome}.`);
@@ -180,6 +179,7 @@ function attemptBF() {
             appState.logAction(`⚡ Black Flash de ${char.nome}! Fluxo ativado.`);
             appState.enviarNotificacao(`⚡ Black Flash de ${char.nome}!`);
             registrarAcao(char.nome, 'Realizou Black Flash!');
+            window._sendDiscord?.(`⚡ Black Flash de ${char.nome}!`);
         }
     }
 }
@@ -195,9 +195,6 @@ function clearCombat() {
     }
 }
 
-// ============================================================
-// CONDIÇÕES (com animação)
-// ============================================================
 function aplicarCondicao() {
     const combat = appState.get('combat');
     if (!combat || !combat.combatants.length) {
@@ -216,15 +213,10 @@ function aplicarCondicao() {
     appState.set('combat', combat);
     window.showToast?.(`🧪 ${alvo.nome} recebeu ${tipo} (${duracao} rodadas)`);
     appState.enviarNotificacao(`🧪 ${alvo.nome} recebeu ${tipo} por ${duracao} rodadas.`);
-
-    // Animação: piscar em vermelho
     piscarElemento(alvo.id);
     registrarAcao(alvo.nome, `Recebeu condição ${tipo} (${duracao} rodadas).`);
 }
 
-// ============================================================
-// RESISTÊNCIA DESESPERADA (com escolha de atributo)
-// ============================================================
 function resistenciaDesesperada() {
     const combat = appState.get('combat');
     if (!combat || !combat.combatants.length) {
@@ -238,7 +230,6 @@ function resistenciaDesesperada() {
         return window.showToast?.('⚠️ EA insuficiente (mínimo 5).');
     }
 
-    // Pergunta qual atributo usar
     const atributo = prompt('Qual atributo para o teste? (Fortitude, Reflexos ou Vontade)', 'Vontade');
     if (!atributo) return;
 
@@ -251,15 +242,10 @@ function resistenciaDesesperada() {
     window.showToast?.(`💪 Resistência Desesperada (${atributo}): ${roll} (${sucesso ? '✅ Sucesso!' : '❌ Falha'})`);
     appState.logAction(`💪 ${alvo.nome} usou Resistência Desesperada (${atributo}): ${roll} (${sucesso ? 'Sucesso' : 'Falha'})`);
     appState.enviarNotificacao(`💪 ${alvo.nome} usou Resistência Desesperada!`);
-
-    // Animação
     piscarElemento(alvo.id);
     appState.set('combat', combat);
 }
 
-// ============================================================
-// FUGIR DO COMBATE (Atletismo CD 15)
-// ============================================================
 function fugirCombate() {
     const combat = appState.get('combat');
     if (!combat || !combat.combatants.length) {
@@ -269,14 +255,12 @@ function fugirCombate() {
     const alvo = combat.combatants[combat.turnIndex];
     if (!alvo) return window.showToast?.('⚠️ Nenhum combatente ativo.');
 
-    // Pergunta modificador de Atletismo
     const mod = parseInt(prompt('Modificador de Atletismo do combatente:', '0')) || 0;
     const roll = Math.floor(Math.random() * 20) + 1 + mod;
     const cd = 15;
     const sucesso = roll >= cd;
 
     if (sucesso) {
-        // Remove o combatente da iniciativa
         combat.combatants = combat.combatants.filter(c => c.id !== alvo.id);
         if (combat.turnIndex >= combat.combatants.length) combat.turnIndex = 0;
         window.showToast?.(`🏃 ${alvo.nome} fugiu do combate! (${roll})`);
@@ -290,9 +274,6 @@ function fugirCombate() {
     }
 }
 
-// ============================================================
-// DANO E ÚLTIMO GOLPE
-// ============================================================
 function aplicarDano(id, dano, agressor = null) {
     const modoTreino = document.getElementById('modoTreino').checked;
     const combat = appState.get('combat');
@@ -307,7 +288,6 @@ function aplicarDano(id, dano, agressor = null) {
     alvo.hp = Math.max(0, alvo.hp - dano);
     piscarElemento(id);
 
-    // Verifica se foi derrubado
     if (alvo.hp <= 0 && agressor) {
         alvo.derrotadoPor = agressor;
         window.showToast?.(`💀 ${alvo.nome} foi derrubado por ${agressor}!`);
@@ -321,9 +301,6 @@ function aplicarDano(id, dano, agressor = null) {
     renderList();
 }
 
-// ============================================================
-// REAÇÃO GASTA
-// ============================================================
 function toggleReacao(id, checked) {
     const combat = appState.get('combat');
     const alvo = combat.combatants.find(c => c.id === id);
@@ -332,9 +309,6 @@ function toggleReacao(id, checked) {
     appState.set('combat', combat);
 }
 
-// ============================================================
-// EDITAR INICIATIVA
-// ============================================================
 function editIniciativa(id, newVal) {
     const combat = appState.get('combat');
     const alvo = combat.combatants.find(c => c.id === id);
@@ -347,9 +321,6 @@ function editIniciativa(id, newVal) {
     renderList();
 }
 
-// ============================================================
-// HISTÓRICO DA INICIATIVA
-// ============================================================
 function registrarAcao(nome, acao) {
     const combat = appState.get('combat');
     if (!combat) return;
@@ -358,9 +329,7 @@ function registrarAcao(nome, acao) {
     }
     const ultima = historico[historico.length-1];
     ultima.acoes.push({ nome, acao, timestamp: Date.now() });
-    // Limita a 50 entradas
     if (historico.length > 50) historico.shift();
-    // Salva no estado
     const data = appState.get('combat');
     data.historico = historico;
     appState.set('combat', data);
@@ -385,9 +354,6 @@ function renderHistorico() {
     container.innerHTML = html;
 }
 
-// ============================================================
-// EXPORTAR/IMPORTAR COMBATE
-// ============================================================
 function exportarCombate() {
     const combat = appState.get('combat');
     if (!combat) return window.showToast?.('⚠️ Nenhum combate para exportar.');
@@ -412,7 +378,6 @@ function importarCombate() {
         reader.onload = (ev) => {
             try {
                 const data = JSON.parse(ev.target.result);
-                // Garante que campos necessários existam
                 if (!data.combatants) throw new Error('Dados inválidos');
                 appState.set('combat', data);
                 window.showToast?.('📥 Combate importado!');
@@ -427,9 +392,28 @@ function importarCombate() {
     input.click();
 }
 
-// ============================================================
-// ANIMAÇÃO (piscar em vermelho)
-// ============================================================
+function definirAcaoPreparada() {
+    const combat = appState.get('combat');
+    const alvo = combat.combatants[combat.turnIndex];
+    if (!alvo) return window.showToast?.('⚠️ Nenhum combatente ativo.');
+
+    const gatilho = prompt('Gatilho (ex: "quando inimigo se mover"):', '');
+    if (!gatilho) return;
+    const acao = prompt('Ação preparada (ex: "atacar"):', '');
+    if (!acao) return;
+
+    acoesPreparadas[alvo.id] = { gatilho, acao, alvo: alvo.id };
+    window.showToast?.(`✅ ${alvo.nome} preparou ação: "${acao}" se "${gatilho}"`);
+    appState.logAction(`⚔️ ${alvo.nome} preparou ação: ${acao} (gatilho: ${gatilho})`);
+}
+
+function toggleMestreInvisivel() {
+    mestreInvisivel = !mestreInvisivel;
+    document.getElementById('mestreInvisivelStatus').textContent = 
+        mestreInvisivel ? '🕵️ Ativo' : '👁️ Visível';
+    window.showToast?.(`🕵️ Modo Mestre ${mestreInvisivel ? 'Ativo' : 'Desativado'}`);
+}
+
 function piscarElemento(id) {
     const items = document.querySelectorAll('.initiative-item');
     const target = Array.from(items).find(el => el.dataset.id === id);
@@ -441,9 +425,6 @@ function piscarElemento(id) {
     }, 1000);
 }
 
-// ============================================================
-// UTILIDADES
-// ============================================================
 function updateCombHp(id, newVal) {
     combatEngine.updateHp(id, parseInt(newVal));
 }
@@ -458,13 +439,61 @@ function removeCombatant(id) {
 }
 
 function quickRoll(faces) {
-    const roll = DiceEngine.roll(faces);
+    const roll = Math.floor(Math.random() * faces) + 1;
     const el = document.getElementById('quickResult');
-    el.textContent = `🎲 d${faces}: ${roll.total}`;
+    if (mestreInvisivel && appState.getRole() === 'master') {
+        el.textContent = `🎲 d${faces}: [OCULTO]`;
+        el.style.color = 'var(--text-dim)';
+    } else {
+        el.textContent = `🎲 d${faces}: ${roll}`;
+        el.style.color = 'var(--gold-light)';
+    }
     el.style.display = 'block';
     setTimeout(() => el.style.display = 'none', 3000);
+    return roll;
 }
 
-// Expor funções para onclick
-window._toggleReacao = toggleReacao;
-window._editIniciativa = editIniciativa;
+// ============================================================
+// ⏳ CRONÔMETRO
+// ============================================================
+function iniciarCronometro() {
+    if (cronometroInterval) pararCronometro();
+    tempoRestante = 30;
+    document.getElementById('cronometroDisplay').textContent = tempoRestante;
+    document.getElementById('btnIniciarCronometro').style.display = 'none';
+    document.getElementById('btnPararCronometro').style.display = '';
+    cronometroInterval = setInterval(() => {
+        tempoRestante--;
+        document.getElementById('cronometroDisplay').textContent = tempoRestante;
+        if (tempoRestante <= 0) {
+            pararCronometro();
+            window.showToast?.('⏰ Tempo esgotado! Turno automaticamente avançado.');
+            playSound('critical');
+            document.getElementById('btnNextTurn')?.click();
+        }
+    }, 1000);
+}
+
+function pararCronometro() {
+    clearInterval(cronometroInterval);
+    cronometroInterval = null;
+    document.getElementById('cronometroDisplay').textContent = '--';
+    document.getElementById('btnIniciarCronometro').style.display = '';
+    document.getElementById('btnPararCronometro').style.display = 'none';
+}
+
+function playSound(type) {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        if (type === 'critical') {
+            osc.frequency.value = 1000;
+            gain.gain.value = 0.3;
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.15);
+        }
+    } catch(e) { /* silencioso */ }
+}

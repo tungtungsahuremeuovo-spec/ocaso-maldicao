@@ -7,7 +7,6 @@ export function init() {
     const campaignName = appState.get('campaign') || 'campanha';
     const sanitized = campaignName.replace(/\s+/g, '_');
 
-    // Atualiza indicador de modo
     const currentRoleSpan = document.getElementById('currentRole');
     if (currentRoleSpan) {
         currentRoleSpan.textContent = role === 'master' ? '👑 Mestre' : '🎮 Jogador';
@@ -73,7 +72,7 @@ export function init() {
     }
 
     // ============================================================
-    // ✅ SLOTS DE SALVAMENTO
+    // ✅ SLOTS
     // ============================================================
     document.getElementById('btnSalvarSlot')?.addEventListener('click', () => {
         const slot = document.getElementById('slotSelector').value;
@@ -99,7 +98,7 @@ export function init() {
     });
 
     // ============================================================
-    // ✅ TEMA (CLARO/ESCURO)
+    // ✅ TEMA
     // ============================================================
     const savedTheme = localStorage.getItem('ocaso_theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
@@ -114,7 +113,42 @@ export function init() {
     }
 
     // ============================================================
-    // ✅ EXPORTAR CAMPANHA EM PDF
+    // ✅ DISCORD WEBHOOK
+    // ============================================================
+    const webhookInput = document.getElementById('discordWebhook');
+    const savedWebhook = localStorage.getItem('ocaso_discord_webhook') || '';
+    if (webhookInput) webhookInput.value = savedWebhook;
+
+    document.getElementById('btnTestarWebhook')?.addEventListener('click', () => {
+        const url = webhookInput.value.trim();
+        if (!url) return window.showToast?.('⚠️ Insira uma URL de webhook.');
+        localStorage.setItem('ocaso_discord_webhook', url);
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: '🧪 Teste de conexão com o webhook!' })
+        }).then(r => {
+            if (r.ok) {
+                window.showToast?.('✅ Webhook funcionando!');
+                document.getElementById('webhookStatus').textContent = '✅ Conectado';
+            } else {
+                window.showToast?.('❌ Erro ao enviar.');
+            }
+        }).catch(() => window.showToast?.('❌ Falha na conexão.'));
+    });
+
+    window._sendDiscord = (message) => {
+        const url = localStorage.getItem('ocaso_discord_webhook');
+        if (!url) return;
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: message })
+        }).catch(() => {});
+    };
+
+    // ============================================================
+    // ✅ EXPORTAR PDF
     // ============================================================
     document.getElementById('btnExportCampanhaPDF')?.addEventListener('click', exportarCampanhaPDF);
 

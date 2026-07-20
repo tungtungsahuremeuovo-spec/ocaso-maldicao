@@ -326,6 +326,7 @@ function renderFicha() {
                 <p><strong>Nível de Poder:</strong> ${char.nivelPoder || 1}</p>
                 <p><strong>🏅 Honra:</strong> ${char.honra || 0} | <strong>Glória:</strong> ${char.gloria || 0}</p>
                 <p><strong>⚖️ Karma:</strong> ${char.karma || 0}</p>
+                <p><strong>🏅 Reputação:</strong> ${char.reputacao || 0}/10</p>
                 <p><strong>Atributos:</strong> ${atributosStr}</p>
                 <p><strong>⚡ Black Flashes:</strong> ${char.blackFlashCount || 0}</p>
                 <p><strong>🌀 Estado de Fluxo:</strong> ${char.fluxoAtivo ? 'Ativo' : 'Inativo'}</p>
@@ -390,6 +391,7 @@ function fillFormForEdit(char) {
     document.getElementById('fGloria').value = char.gloria || 0;
     document.getElementById('fDiario').value = char.diario || '';
     document.getElementById('fKarma').value = char.karma || 0;
+    document.getElementById('fReputacao').value = char.reputacao || 0;
 
     // Carregar atributos
     document.getElementById('fForca').value = char.forca || 1;
@@ -440,6 +442,7 @@ function clearForm() {
     document.getElementById('fGloria').value = 0;
     document.getElementById('fDiario').value = '';
     document.getElementById('fKarma').value = 0;
+    document.getElementById('fReputacao').value = 0;
 
     // Resetar atributos para 1
     ['fForca','fDestreza','fConstituicao','fInteligencia','fSabedoria','fPresenca'].forEach(id => {
@@ -652,6 +655,7 @@ async function saveCharacter() {
         gloria: +document.getElementById('fGloria').value || 0,
         diario: document.getElementById('fDiario').value,
         karma: +document.getElementById('fKarma').value || 0,
+        reputacao: +document.getElementById('fReputacao').value || 0,
         forca: +document.getElementById('fForca').value || 1,
         destreza: +document.getElementById('fDestreza').value || 1,
         constituicao: +document.getElementById('fConstituicao').value || 1,
@@ -665,7 +669,7 @@ async function saveCharacter() {
         const fieldsToCompare = [
             'nome','origem','estilo','grau','status','hpMax','hp','eaMax','ea',
             'folego','exaustao','nivelPoder','ambicao','medos','notas','lore',
-            'aparencia','cla','tecnica','honra','gloria','karma','diario',
+            'aparencia','cla','tecnica','honra','gloria','karma','reputacao','diario',
             'forca','destreza','constituicao','inteligencia','sabedoria','presenca'
         ];
         fieldsToCompare.forEach(field => {

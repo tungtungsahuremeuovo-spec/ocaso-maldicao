@@ -1,0 +1,25 @@
+<div class="panel fade-in">
+    <div class="panel-header">🤝 Relacionamentos</div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+        <select id="relPersonagem1">
+            <option value="">Personagem 1</option>
+        </select>
+        <select id="relPersonagem2">
+            <option value="">Personagem 2</option>
+        </select>
+        <select id="relNivel">
+            <option value="0">Neutro (0)</option>
+            <option value="1">Conhecido (+1)</option>
+            <option value="2">Aliado (+2)</option>
+            <option value="3">Amigo (+3)</option>
+            <option value="4">Vínculo (+4)</option>
+            <option value="5">Lendário (+5)</option>
+            <option value="-1">Rival (-1)</option>
+            <option value="-2">Inimigo (-2)</option>
+        </select>
+        <button class="btn btn-gold" id="btnAddRelacionamento">➕ Definir</button>
+    </div>
+    <div id="relacionamentosList" style="max-height:400px; overflow-y:auto;">
+        <p class="empty-state">Nenhum relacionamento definido.</p>
+    </div>
+</div>

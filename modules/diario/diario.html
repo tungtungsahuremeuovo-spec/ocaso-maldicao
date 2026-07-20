@@ -1,4 +1,19 @@
 <div class="panel fade-in">
-    <div class="panel-header">📖 Diário de Bordo</div>
-    <div id="diarioList" class="list-container" style="max-height:70vh;"></div>
+    <div class="panel-header">📜 Diário de Bordo</div>
+    <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+        <input id="filtroLog" placeholder="Filtrar eventos..." style="flex:1;">
+        <select id="filtroLogTipo">
+            <option value="">Todos</option>
+            <option value="Personagem">👤 Personagem</option>
+            <option value="Missão">🏴 Missão</option>
+            <option value="Combate">⚔️ Combate</option>
+            <option value="NPC">👥 NPC</option>
+            <option value="Sistema">⚙️ Sistema</option>
+        </select>
+        <button class="btn btn-sm" id="btnLimparLog">🧹 Limpar filtros</button>
+        <button class="btn btn-sm btn-red" id="btnLimparLogCompleto" title="Limpar todo o histórico">🗑️ Limpar histórico</button>
+    </div>
+    <div id="logContainer" style="max-height:60vh; overflow-y:auto; font-size:0.85rem; background:var(--bg-2); padding:10px; border-radius:6px;">
+        <p class="empty-state">Nenhum evento registrado.</p>
+    </div>
 </div>

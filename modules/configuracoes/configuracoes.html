@@ -1,7 +1,5 @@
 <div class="panel fade-in">
     <div class="panel-header">⚙️ Configurações</div>
-    
-    <!-- Botões principais -->
     <div class="flex-row">
         <button class="btn btn-gold" id="btnExport">📤 Exportar Campanha</button>
         <button class="btn btn-gold" id="btnExportPlayer" style="display:none;">🎭 Exportar Pacote do Jogador</button>
@@ -9,17 +7,42 @@
         <button class="btn btn-red" id="btnReset" style="display:none;">⚠️ Resetar Tudo</button>
     </div>
 
-    <!-- Controles de Sala Online (visíveis apenas para mestre) -->
-    <div class="mt-2" id="roomControls">
-        <p style="font-weight:600; color:var(--gold);">🌐 Sala Online</p>
-        <p id="roomInfo" style="font-size:0.85rem; color:var(--text-dim);">Nenhuma sala ativa.</p>
-        <div class="flex-row">
-            <button class="btn btn-gold" id="btnCreateRoom" style="display:none;">🏠 Criar Nova Sala</button>
-            <button class="btn btn-red" id="btnLeaveRoom" style="display:none;">🚪 Sair da Sala</button>
+    <!-- Slots -->
+    <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:12px;">
+        <label style="font-weight:600; color:var(--gold);">💾 Slots de Salvamento</label>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
+            <select id="slotSelector">
+                <option value="slot1">Slot 1</option>
+                <option value="slot2">Slot 2</option>
+                <option value="slot3">Slot 3</option>
+            </select>
+            <button class="btn btn-sm" id="btnSalvarSlot">💾 Salvar neste slot</button>
+            <button class="btn btn-sm" id="btnCarregarSlot">📂 Carregar slot</button>
         </div>
     </div>
 
-    <!-- Informações gerais -->
+    <!-- Tema -->
+    <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:12px;">
+        <label style="font-weight:600; color:var(--gold);">🎨 Tema</label>
+        <select id="themeSelector" style="margin-top:4px; width:auto;">
+            <option value="dark">🌙 Escuro</option>
+            <option value="light">☀️ Claro</option>
+        </select>
+    </div>
+
+    <!-- Discord Webhook -->
+    <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:12px;">
+        <label style="font-weight:600; color:var(--gold);">🔗 Discord Webhook</label>
+        <input id="discordWebhook" placeholder="URL do webhook..." style="width:100%; margin-top:4px;">
+        <button class="btn btn-sm mt-1" id="btnTestarWebhook">📨 Testar</button>
+        <span id="webhookStatus" style="font-size:0.8rem; color:var(--text-dim);"></span>
+    </div>
+
+    <!-- Exportar PDF -->
+    <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:12px;">
+        <button class="btn btn-gold" id="btnExportCampanhaPDF">📄 Exportar Campanha em PDF</button>
+    </div>
+
     <div class="mt-2" style="font-size:0.8rem;color:var(--text-dim);">
         <p>💾 Salvamento automático ativo.</p>
         <p>🔗 Compartilhe o ID da sala com os jogadores.</p>

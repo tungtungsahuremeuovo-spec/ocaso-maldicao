@@ -1,12 +1,10 @@
 <div class="panel fade-in">
     <div class="panel-header">⚔️ Combate</div>
 
-    <!-- Modo Treino -->
     <div class="mt-2" style="font-size:0.85rem;">
         <label><input type="checkbox" id="modoTreino"> 🥊 Modo Treino (não salva dano)</label>
     </div>
 
-    <!-- Bloco de condições -->
     <div class="mt-2" style="font-size:0.85rem;">
         <strong>Aplicar Condição:</strong>
         <select id="condTipo">
@@ -19,23 +17,27 @@
         <button class="btn btn-sm" id="btnAplicarCond">Aplicar</button>
     </div>
 
-    <!-- Resistência Desesperada -->
     <div class="mt-2">
         <button class="btn btn-sm" id="btnResistDesesperada">💪 Resistência Desesperada (5 EA)</button>
         <span id="resistStatus" style="font-size:0.8rem;color:var(--text-dim);margin-left:8px;"></span>
     </div>
 
-    <!-- Fugir do Combate -->
     <div class="mt-2">
         <button class="btn btn-sm btn-red" id="btnFugir">🏃 Fugir do Combate (Atletismo CD 15)</button>
         <span id="fugirStatus" style="font-size:0.8rem;color:var(--text-dim);margin-left:8px;"></span>
     </div>
 
-    <!-- Ações Preparadas e Mestre Invisível -->
     <div class="mt-2" style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-sm" id="btnAcaoPreparada">⚡ Ação Preparada</button>
         <button class="btn btn-sm" id="btnMestreInvisivel">🕵️ Mestre Invisível</button>
         <span id="mestreInvisivelStatus" style="font-size:0.8rem;color:var(--text-dim);">👁️ Visível</span>
+    </div>
+
+    <!-- ⏳ CRONÔMETRO -->
+    <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button class="btn btn-sm" id="btnIniciarCronometro">⏱️ Iniciar Turno (30s)</button>
+        <span id="cronometroDisplay" style="font-size:1.2rem; font-weight:bold; color:var(--gold);">--</span>
+        <button class="btn btn-sm btn-red" id="btnPararCronometro" style="display:none;">⏹️ Parar</button>
     </div>
 
     <div class="grid-2 fade-in">
