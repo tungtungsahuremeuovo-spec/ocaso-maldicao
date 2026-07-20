@@ -2,9 +2,25 @@
 import appState from '../../assets/js/app.js';
 
 export function init() {
+    atualizarResumo();
     renderEstatisticas();
-    appState.subscribe('characters', renderEstatisticas);
-    appState.subscribe('combat', renderEstatisticas);
+    renderUltimosEventos();
+    appState.subscribe('characters', () => { atualizarResumo(); renderEstatisticas(); });
+    appState.subscribe('quests', atualizarResumo);
+    appState.subscribe('npcs', atualizarResumo);
+    appState.subscribe('campaignLog', renderUltimosEventos);
+}
+
+function atualizarResumo() {
+    const chars = appState.get('characters') || [];
+    const quests = appState.get('quests') || [];
+    const npcs = appState.get('npcs') || [];
+    const totalBF = chars.reduce((acc, c) => acc + (c.blackFlashCount || 0), 0);
+
+    document.getElementById('totalPersonagens').textContent = chars.length;
+    document.getElementById('totalMissoes').textContent = quests.length;
+    document.getElementById('totalNPCs').textContent = npcs.length;
+    document.getElementById('totalBF').textContent = totalBF;
 }
 
 function renderEstatisticas() {
@@ -54,4 +70,28 @@ function desenharGrafico(id, dados, label) {
     ctx.font = '10px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(label, w/2, 12);
+}
+
+function renderUltimosEventos() {
+    const log = appState.get('campaignLog') || [];
+    const container = document.getElementById('ultimosEventos');
+    if (!container) return;
+    const ultimos = log.slice(-10).reverse();
+    if (!ultimos.length) {
+        container.innerHTML = '<p class="empty-state">Nenhum evento recente.</p>';
+        return;
+    }
+    container.innerHTML = ultimos.map(entry => `
+        <div style="padding:4px 0; border-bottom:1px solid var(--border); font-size:0.8rem;">
+            <span style="color:var(--text-dim); font-size:0.7rem;">${new Date(entry.timestamp).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
+            <span>${escapeHtml(entry.message)}</span>
+        </div>
+    `).join('');
+}
+
+// Helper simples para escape (já que não podemos importar o utils de dentro do dashboard)
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }

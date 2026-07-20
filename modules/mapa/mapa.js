@@ -99,6 +99,7 @@ function drawGridAndTokens() {
     const w = canvas.width, h = canvas.height;
     const cellSize = w / gridSize;
 
+    // Grid
     ctx.strokeStyle = 'rgba(255,255,255,0.15)';
     ctx.lineWidth = 0.5;
     for (let i = 0; i <= gridSize; i++) {
@@ -112,6 +113,7 @@ function drawGridAndTokens() {
         ctx.stroke();
     }
 
+    // Tokens
     tokens.forEach(token => {
         const x = token.x * cellSize + cellSize/2;
         const y = token.y * cellSize + cellSize/2;
