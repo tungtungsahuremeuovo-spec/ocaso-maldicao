@@ -72,7 +72,81 @@ export function init() {
     }
 
     // ============================================================
-    // ✅ SLOTS
+    // ✅ SALA ONLINE – CRIAR, EXIBIR E COPIAR ID
+    // ============================================================
+    const roomInfo = document.getElementById('roomInfo');
+    const btnCreate = document.getElementById('btnCreateRoom');
+    const btnLeave = document.getElementById('btnLeaveRoom');
+    const btnCopy = document.getElementById('btnCopyRoomId');
+
+    // Verifica se já existe sala ativa
+    const savedHostId = localStorage.getItem('ocaso_hostId') || null;
+    if (role === 'master') {
+        // Se já tem um hostId salvo, exibe
+        if (savedHostId) {
+            appState.hostId = savedHostId;
+            roomInfo.textContent = `🆔 ID da sala: ${savedHostId} (copie e envie para os jogadores)`;
+            btnCreate.style.display = 'none';
+            btnLeave.style.display = '';
+            btnCopy.style.display = '';
+        } else {
+            roomInfo.textContent = 'Nenhuma sala ativa.';
+            btnCreate.style.display = '';
+            btnLeave.style.display = 'none';
+            btnCopy.style.display = 'none';
+        }
+
+        // Criar sala
+        btnCreate.addEventListener('click', async () => {
+            try {
+                const id = await appState.createOnlineRoom?.();
+                if (id) {
+                    appState.hostId = id;
+                    localStorage.setItem('ocaso_hostId', id);
+                    roomInfo.textContent = `🆔 ID da sala: ${id} (copie e envie para os jogadores)`;
+                    btnCreate.style.display = 'none';
+                    btnLeave.style.display = '';
+                    btnCopy.style.display = '';
+                    window.showToast?.('🏠 Sala criada! ID: ' + id);
+                    appState.logAction(`🌐 Sala criada com ID: ${id}`);
+                } else {
+                    window.showToast?.('❌ Erro ao criar sala.');
+                }
+            } catch (err) {
+                window.showToast?.('❌ Erro: ' + err.message);
+            }
+        });
+
+        // Sair da sala
+        btnLeave.addEventListener('click', () => {
+            appState.destroyOnlineRoom?.();
+            localStorage.removeItem('ocaso_hostId');
+            roomInfo.textContent = 'Nenhuma sala ativa.';
+            btnLeave.style.display = 'none';
+            btnCreate.style.display = '';
+            btnCopy.style.display = 'none';
+            window.showToast?.('🚪 Saiu da sala.');
+            appState.logAction('🌐 Saiu da sala.');
+        });
+
+        // Copiar ID
+        btnCopy.addEventListener('click', () => {
+            const id = appState.hostId || localStorage.getItem('ocaso_hostId');
+            if (id) {
+                navigator.clipboard.writeText(id).then(() => {
+                    window.showToast?.('📋 ID da sala copiado!');
+                }).catch(() => {
+                    window.showToast?.('📋 ID: ' + id);
+                });
+            }
+        });
+    } else {
+        // Jogador: esconde controles de sala
+        document.getElementById('roomControls').style.display = 'none';
+    }
+
+    // ============================================================
+    // ✅ SLOTS DE SALVAMENTO
     // ============================================================
     document.getElementById('btnSalvarSlot')?.addEventListener('click', () => {
         const slot = document.getElementById('slotSelector').value;
