@@ -1,5 +1,6 @@
 // modules/configuracoes/configuracoes.js
 import appState from '../../assets/js/app.js';
+import { escapeHtml } from '../../core/utils/utils.js';
 
 export function init() {
     const role = appState.getRole();
@@ -12,7 +13,7 @@ export function init() {
     }
 
     // ============================================================
-    // ✅ SALA ONLINE – USANDO APENAS O QUE EXISTE
+    // ✅ SALA ONLINE
     // ============================================================
     const roomInfo = document.getElementById('roomInfo');
     const btnCreate = document.getElementById('btnCreateRoom');
@@ -23,13 +24,12 @@ export function init() {
 
     if (role === 'master') {
         if (savedHostId) {
-            appState.hostId = savedHostId;
             roomInfo.textContent = `🆔 ID da sala: ${savedHostId} (copie e envie para os jogadores)`;
             btnCreate.style.display = 'none';
             btnLeave.style.display = '';
             btnCopy.style.display = '';
         } else {
-            roomInfo.textContent = 'Nenhuma sala ativa.';
+            roomInfo.textContent = 'Nenhuma sala ativa. Clique em "Criar Nova Sala" para começar.';
             btnCreate.style.display = '';
             btnLeave.style.display = 'none';
             btnCopy.style.display = 'none';
@@ -49,14 +49,13 @@ export function init() {
                         window.showToast?.('🏠 Sala criada! ID: ' + id);
                     }
                 } else {
-                    // Fallback: se a função não existir, apenas gera um ID simbólico
                     const fakeId = 'sala-' + Date.now().toString(36);
                     localStorage.setItem('ocaso_hostId', fakeId);
                     roomInfo.textContent = `🆔 ID da sala (simulado): ${fakeId}`;
                     btnCreate.style.display = 'none';
                     btnLeave.style.display = '';
                     btnCopy.style.display = '';
-                    window.showToast?.('🏠 Sala simulada criada! (função P2P não disponível)');
+                    window.showToast?.('🏠 Sala simulada criada! (P2P não disponível)');
                 }
             } catch (err) {
                 window.showToast?.('❌ Erro: ' + err.message);
@@ -87,11 +86,12 @@ export function init() {
         });
     } else {
         // Jogador: esconde controles de sala
-        document.getElementById('roomInfo').parentElement.style.display = 'none';
+        const roomContainer = roomInfo?.parentElement;
+        if (roomContainer) roomContainer.style.display = 'none';
     }
 
     // ============================================================
-    // ✅ EXPORTAR (apenas dados locais)
+    // ✅ EXPORTAR
     // ============================================================
     document.getElementById('btnExport')?.addEventListener('click', () => {
         const data = JSON.stringify(appState.data, null, 2);
@@ -285,17 +285,4 @@ export function init() {
             window.showToast?.('❌ Bloqueie o pop-up para exportar.');
         }
     });
-
-    // Helper local para escapeHtml (caso não exista)
-    function escapeHtml(text) {
-        if (!text) return '';
-        return String(text).replace(/[&<>"']/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            if (m === '"') return '&quot;';
-            if (m === "'") return '&#039;';
-            return m;
-        });
-    }
 }

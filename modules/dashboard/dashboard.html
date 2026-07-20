@@ -1,21 +1,41 @@
 <div class="panel fade-in">
-    <div class="panel-header">🏠 Painel</div>
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:16px;">
-        <div class="panel" style="background:var(--bg-2);">
-            <div class="panel-header" style="font-size:1rem;">👥 Personagens</div>
-            <div id="personagensCount">0</div>
+    <div class="panel-header" style="font-size:1.4rem;">🏠 Painel da Campanha</div>
+    <p style="color:var(--text-dim); margin-bottom:16px;">Bem-vindo ao Ocaso & Maldição — Escola Jujutsu de Kyoto</p>
+
+    <!-- Cards de estatísticas -->
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:16px; margin-bottom:20px;">
+        <div class="stat-card" style="background:var(--bg-2); padding:16px; border-radius:12px; border-left:4px solid var(--gold);">
+            <div style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px;">Personagens</div>
+            <div id="personagensCount" style="font-size:2rem; font-weight:bold; color:var(--gold);">0</div>
         </div>
-        <div class="panel" style="background:var(--bg-2);">
-            <div class="panel-header" style="font-size:1rem;">🏴 Missões</div>
-            <div id="missoesCount">0</div>
+        <div class="stat-card" style="background:var(--bg-2); padding:16px; border-radius:12px; border-left:4px solid var(--blue);">
+            <div style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px;">Missões</div>
+            <div id="missoesCount" style="font-size:2rem; font-weight:bold; color:var(--blue);">0</div>
+            <div style="font-size:0.7rem; color:var(--text-dim);"><span id="missoesConcluidas">0</span> concluídas</div>
         </div>
-        <div class="panel" style="background:var(--bg-2);">
-            <div class="panel-header" style="font-size:1rem;">⚔️ Combates</div>
-            <div id="combatesCount">0</div>
+        <div class="stat-card" style="background:var(--bg-2); padding:16px; border-radius:12px; border-left:4px solid var(--red);">
+            <div style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px;">Combate</div>
+            <div id="combatesCount" style="font-size:2rem; font-weight:bold; color:var(--red);">0</div>
+            <div style="font-size:0.7rem; color:var(--text-dim);">combatentes em campo</div>
+        </div>
+        <div class="stat-card" style="background:var(--bg-2); padding:16px; border-radius:12px; border-left:4px solid var(--purple-light);">
+            <div style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px;">NPCs</div>
+            <div id="npcsCount" style="font-size:2rem; font-weight:bold; color:var(--purple-light);">0</div>
         </div>
     </div>
-    <div class="panel mt-2">
-        <div class="panel-header">📊 Estatísticas</div>
-        <div id="estatisticasText" style="font-size:0.9rem; color:var(--text-dim);">Carregando...</div>
+
+    <!-- Últimas ações -->
+    <div class="panel" style="background:var(--bg-2); padding:12px; border-radius:8px;">
+        <div class="panel-header" style="font-size:1rem; border-bottom:none; padding-bottom:0;">📜 Últimas Atividades</div>
+        <div id="ultimasAcoes" style="max-height:200px; overflow-y:auto; font-size:0.85rem; color:var(--text-dim);">
+            <p class="empty-state">Nenhuma ação recente.</p>
+        </div>
+    </div>
+
+    <!-- Botão rápido -->
+    <div style="display:flex; gap:8px; margin-top:16px; flex-wrap:wrap;">
+        <button class="btn btn-gold" onclick="window.navigateTo('ficha')">📋 Ir para Ficha</button>
+        <button class="btn btn-gold" onclick="window.navigateTo('combate')">⚔️ Ir para Combate</button>
+        <button class="btn btn-gold" onclick="window.navigateTo('missoes')">🏴 Ir para Missões</button>
     </div>
 </div>

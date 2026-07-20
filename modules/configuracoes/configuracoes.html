@@ -9,7 +9,7 @@
     </div>
 
     <!-- Sala Online -->
-    <div class="mt-2">
+    <div class="mt-2" style="border-top:1px solid var(--border); padding-top:12px;">
         <p style="font-weight:600; color:var(--gold);">🌐 Sala Online</p>
         <p id="roomInfo" style="font-size:0.85rem; color:var(--text-dim);">Nenhuma sala ativa.</p>
         <div class="flex-row">
@@ -45,9 +45,10 @@
     <!-- Discord Webhook -->
     <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:12px;">
         <label style="font-weight:600; color:var(--gold);">🔗 Discord Webhook</label>
-        <input id="discordWebhook" placeholder="URL do webhook..." style="width:100%; margin-top:4px;">
+        <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:4px;">Insira a URL do webhook do Discord para receber notificações de rolagens e eventos importantes.</p>
+        <input id="discordWebhook" placeholder="https://discord.com/api/webhooks/..." style="width:100%; margin-top:4px;">
         <button class="btn btn-sm mt-1" id="btnTestarWebhook">📨 Testar</button>
-        <span id="webhookStatus" style="font-size:0.8rem; color:var(--text-dim);"></span>
+        <span id="webhookStatus" style="font-size:0.8rem; color:var(--text-dim); margin-left:8px;"></span>
     </div>
 
     <!-- Exportar PDF -->
