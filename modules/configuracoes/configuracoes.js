@@ -1,6 +1,5 @@
 // modules/configuracoes/configuracoes.js
 import appState from '../../assets/js/app.js';
-import { exportData, triggerImport } from '../../core/database/importExport.js';
 
 export function init() {
     const role = appState.getRole();
@@ -12,77 +11,17 @@ export function init() {
         currentRoleSpan.textContent = role === 'master' ? '👑 Mestre' : '🎮 Jogador';
     }
 
-    // --- Exportar Campanha ---
-    const btnExport = document.getElementById('btnExport');
-    if (btnExport) {
-        btnExport.addEventListener('click', () => {
-            const filename = role === 'master'
-                ? `ocaso_${sanitized}.json`
-                : `minha_campanha_${sanitized}.json`;
-            exportData(appState.data, filename);
-            window.showToast?.('📤 Dados exportados!');
-        });
-    }
-
-    // --- Exportar Pacote do Jogador ---
-    const btnExportPlayer = document.getElementById('btnExportPlayer');
-    if (btnExportPlayer) {
-        if (role !== 'master') {
-            btnExportPlayer.style.display = 'none';
-        } else {
-            btnExportPlayer.style.display = '';
-            btnExportPlayer.addEventListener('click', () => {
-                const pkg = appState.exportPlayerPackage?.() || {};
-                const filename = `pacote_jogador_${sanitized}.ocaso`;
-                exportData(pkg, filename);
-                window.showToast?.('📦 Pacote do jogador exportado!');
-            });
-        }
-    }
-
-    // --- Importar ---
-    const btnImport = document.getElementById('btnImport');
-    if (btnImport) {
-        btnImport.addEventListener('click', () => {
-            triggerImport((data) => {
-                Object.keys(data).forEach(key => {
-                    if (key !== 'campaign') {
-                        appState.set(key, data[key]);
-                    }
-                });
-                window.showToast?.('📥 Campanha importada!');
-            });
-        });
-    }
-
-    // --- Reset ---
-    const btnReset = document.getElementById('btnReset');
-    if (btnReset) {
-        if (role !== 'master') {
-            btnReset.style.display = 'none';
-        } else {
-            btnReset.style.display = '';
-            btnReset.addEventListener('click', () => {
-                if (confirm('⚠️ Resetar TODOS os dados da campanha?')) {
-                    appState.reset();
-                    window.showToast?.('🗑️ Campanha resetada.');
-                }
-            });
-        }
-    }
-
     // ============================================================
-    // ✅ SALA ONLINE – CRIAR, EXIBIR E COPIAR ID
+    // ✅ SALA ONLINE – USANDO APENAS O QUE EXISTE
     // ============================================================
     const roomInfo = document.getElementById('roomInfo');
     const btnCreate = document.getElementById('btnCreateRoom');
     const btnLeave = document.getElementById('btnLeaveRoom');
     const btnCopy = document.getElementById('btnCopyRoomId');
 
-    // Verifica se já existe sala ativa
     const savedHostId = localStorage.getItem('ocaso_hostId') || null;
+
     if (role === 'master') {
-        // Se já tem um hostId salvo, exibe
         if (savedHostId) {
             appState.hostId = savedHostId;
             roomInfo.textContent = `🆔 ID da sala: ${savedHostId} (copie e envie para os jogadores)`;
@@ -96,40 +35,46 @@ export function init() {
             btnCopy.style.display = 'none';
         }
 
-        // Criar sala
         btnCreate.addEventListener('click', async () => {
             try {
-                const id = await appState.createOnlineRoom?.();
-                if (id) {
-                    appState.hostId = id;
-                    localStorage.setItem('ocaso_hostId', id);
-                    roomInfo.textContent = `🆔 ID da sala: ${id} (copie e envie para os jogadores)`;
+                if (typeof appState.createOnlineRoom === 'function') {
+                    const id = await appState.createOnlineRoom();
+                    if (id) {
+                        appState.hostId = id;
+                        localStorage.setItem('ocaso_hostId', id);
+                        roomInfo.textContent = `🆔 ID da sala: ${id} (copie e envie para os jogadores)`;
+                        btnCreate.style.display = 'none';
+                        btnLeave.style.display = '';
+                        btnCopy.style.display = '';
+                        window.showToast?.('🏠 Sala criada! ID: ' + id);
+                    }
+                } else {
+                    // Fallback: se a função não existir, apenas gera um ID simbólico
+                    const fakeId = 'sala-' + Date.now().toString(36);
+                    localStorage.setItem('ocaso_hostId', fakeId);
+                    roomInfo.textContent = `🆔 ID da sala (simulado): ${fakeId}`;
                     btnCreate.style.display = 'none';
                     btnLeave.style.display = '';
                     btnCopy.style.display = '';
-                    window.showToast?.('🏠 Sala criada! ID: ' + id);
-                    appState.logAction(`🌐 Sala criada com ID: ${id}`);
-                } else {
-                    window.showToast?.('❌ Erro ao criar sala.');
+                    window.showToast?.('🏠 Sala simulada criada! (função P2P não disponível)');
                 }
             } catch (err) {
                 window.showToast?.('❌ Erro: ' + err.message);
             }
         });
 
-        // Sair da sala
         btnLeave.addEventListener('click', () => {
-            appState.destroyOnlineRoom?.();
+            if (typeof appState.destroyOnlineRoom === 'function') {
+                appState.destroyOnlineRoom();
+            }
             localStorage.removeItem('ocaso_hostId');
             roomInfo.textContent = 'Nenhuma sala ativa.';
             btnLeave.style.display = 'none';
             btnCreate.style.display = '';
             btnCopy.style.display = 'none';
             window.showToast?.('🚪 Saiu da sala.');
-            appState.logAction('🌐 Saiu da sala.');
         });
 
-        // Copiar ID
         btnCopy.addEventListener('click', () => {
             const id = appState.hostId || localStorage.getItem('ocaso_hostId');
             if (id) {
@@ -142,17 +87,92 @@ export function init() {
         });
     } else {
         // Jogador: esconde controles de sala
-        document.getElementById('roomControls').style.display = 'none';
+        document.getElementById('roomInfo').parentElement.style.display = 'none';
     }
 
     // ============================================================
-    // ✅ SLOTS DE SALVAMENTO
+    // ✅ EXPORTAR (apenas dados locais)
+    // ============================================================
+    document.getElementById('btnExport')?.addEventListener('click', () => {
+        const data = JSON.stringify(appState.data, null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ocaso_${sanitized}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        window.showToast?.('📤 Dados exportados!');
+    });
+
+    // ============================================================
+    // ✅ EXPORTAR PACOTE DO JOGADOR
+    // ============================================================
+    document.getElementById('btnExportPlayer')?.addEventListener('click', () => {
+        if (role !== 'master') return;
+        const pkg = {
+            campaign: appState.get('campaign'),
+            characters: (appState.get('characters') || []).filter(c => c.isPlayerCharacter),
+            quests: (appState.get('quests') || []).filter(q => q.visivelJogadores)
+        };
+        const data = JSON.stringify(pkg, null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `pacote_jogador_${sanitized}.ocaso`;
+        a.click();
+        URL.revokeObjectURL(url);
+        window.showToast?.('📦 Pacote do jogador exportado!');
+    });
+
+    // ============================================================
+    // ✅ IMPORTAR
+    // ============================================================
+    document.getElementById('btnImport')?.addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json,.ocaso';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const data = JSON.parse(ev.target.result);
+                    Object.keys(data).forEach(key => {
+                        if (key !== 'campaign') {
+                            appState.set(key, data[key]);
+                        }
+                    });
+                    window.showToast?.('📥 Campanha importada!');
+                } catch (err) {
+                    window.showToast?.('❌ Arquivo inválido.');
+                }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    });
+
+    // ============================================================
+    // ✅ RESET
+    // ============================================================
+    document.getElementById('btnReset')?.addEventListener('click', () => {
+        if (role !== 'master') return;
+        if (confirm('⚠️ Resetar TODOS os dados da campanha?')) {
+            appState.reset();
+            window.showToast?.('🗑️ Campanha resetada.');
+        }
+    });
+
+    // ============================================================
+    // ✅ SLOTS
     // ============================================================
     document.getElementById('btnSalvarSlot')?.addEventListener('click', () => {
         const slot = document.getElementById('slotSelector').value;
         localStorage.setItem(`ocaso_slot_${slot}`, JSON.stringify(appState.data));
         window.showToast?.('✅ Slot salvo!');
-        appState.logAction(`💾 Slot ${slot} salvo.`);
     });
 
     document.getElementById('btnCarregarSlot')?.addEventListener('click', () => {
@@ -165,7 +185,6 @@ export function init() {
                 if (key !== 'campaign') appState.set(key, parsed[key]);
             });
             window.showToast?.('📂 Slot carregado!');
-            appState.logAction(`📂 Slot ${slot} carregado.`);
         } catch(e) {
             window.showToast?.('❌ Erro ao carregar slot.');
         }
@@ -182,7 +201,6 @@ export function init() {
         themeSelector.addEventListener('change', function() {
             document.documentElement.setAttribute('data-theme', this.value);
             localStorage.setItem('ocaso_theme', this.value);
-            appState.logAction(`🎨 Tema alterado para ${this.value}.`);
         });
     }
 
@@ -211,25 +229,13 @@ export function init() {
         }).catch(() => window.showToast?.('❌ Falha na conexão.'));
     });
 
-    window._sendDiscord = (message) => {
-        const url = localStorage.getItem('ocaso_discord_webhook');
-        if (!url) return;
-        fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: message })
-        }).catch(() => {});
-    };
-
     // ============================================================
     // ✅ EXPORTAR PDF
     // ============================================================
-    document.getElementById('btnExportCampanhaPDF')?.addEventListener('click', exportarCampanhaPDF);
-
-    function exportarCampanhaPDF() {
+    document.getElementById('btnExportCampanhaPDF')?.addEventListener('click', function() {
         const data = appState.data;
         const html = `
-            <html><head><title>Campanha - ${data.campaign}</title>
+            <html><head><title>Campanha - ${escapeHtml(data.campaign)}</title>
             <style>
                 body{font-family:sans-serif;padding:20px;color:#333;background:#fff;}
                 h1{color:#c9a24e;}
@@ -278,5 +284,18 @@ export function init() {
         } else {
             window.showToast?.('❌ Bloqueie o pop-up para exportar.');
         }
+    });
+
+    // Helper local para escapeHtml (caso não exista)
+    function escapeHtml(text) {
+        if (!text) return '';
+        return String(text).replace(/[&<>"']/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            if (m === '"') return '&quot;';
+            if (m === "'") return '&#039;';
+            return m;
+        });
     }
 }

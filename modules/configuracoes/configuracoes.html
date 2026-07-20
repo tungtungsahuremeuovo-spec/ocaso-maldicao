@@ -1,20 +1,19 @@
 <div class="panel fade-in">
     <div class="panel-header">⚙️ Configurações</div>
 
-    <!-- Botões principais -->
     <div class="flex-row">
         <button class="btn btn-gold" id="btnExport">📤 Exportar Campanha</button>
-        <button class="btn btn-gold" id="btnExportPlayer" style="display:none;">🎭 Exportar Pacote do Jogador</button>
+        <button class="btn btn-gold" id="btnExportPlayer">🎭 Exportar Pacote do Jogador</button>
         <button class="btn" id="btnImport">📥 Importar Campanha</button>
-        <button class="btn btn-red" id="btnReset" style="display:none;">⚠️ Resetar Tudo</button>
+        <button class="btn btn-red" id="btnReset">⚠️ Resetar Tudo</button>
     </div>
 
     <!-- Sala Online -->
-    <div class="mt-2" id="roomControls">
+    <div class="mt-2">
         <p style="font-weight:600; color:var(--gold);">🌐 Sala Online</p>
         <p id="roomInfo" style="font-size:0.85rem; color:var(--text-dim);">Nenhuma sala ativa.</p>
         <div class="flex-row">
-            <button class="btn btn-gold" id="btnCreateRoom" style="display:none;">🏠 Criar Nova Sala</button>
+            <button class="btn btn-gold" id="btnCreateRoom">🏠 Criar Nova Sala</button>
             <button class="btn btn-red" id="btnLeaveRoom" style="display:none;">🚪 Sair da Sala</button>
             <button class="btn btn-sm" id="btnCopyRoomId" style="display:none;">📋 Copiar ID</button>
         </div>
@@ -58,7 +57,6 @@
 
     <div class="mt-2" style="font-size:0.8rem;color:var(--text-dim);">
         <p>💾 Salvamento automático ativo.</p>
-        <p>🔗 Compartilhe o ID da sala com os jogadores.</p>
         <p><strong>Modo atual:</strong> <span id="currentRole"></span></p>
     </div>
 </div>
