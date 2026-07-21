@@ -6,7 +6,7 @@ export function init() {
     const role = appState.getRole();
     const form = document.getElementById('avisoForm');
 
-    // Apenas mestre vê o formulário de publicação
+    // Apenas mestre vê o formulário
     if (role === 'master') {
         form.style.display = 'block';
         document.getElementById('btnAddAviso').addEventListener('click', addAviso);

@@ -25,7 +25,6 @@ export function init() {
         });
     }
 
-    // Atualiza modo atual
     const currentRoleSpan = document.getElementById('currentRole');
     if (currentRoleSpan) {
         currentRoleSpan.textContent = role === 'master' ? '👑 Mestre' : '🎮 Jogador';
@@ -97,8 +96,7 @@ function carregarControlesMestre() {
         }
     });
 
-    // Sala online...
-    // (código da sala que já estava, mantido)
+    // Sala online (apenas mestre)
     const roomInfo = document.getElementById('roomInfo');
     const btnCreate = document.getElementById('btnCreateRoom');
     const btnLeave = document.getElementById('btnLeaveRoom');

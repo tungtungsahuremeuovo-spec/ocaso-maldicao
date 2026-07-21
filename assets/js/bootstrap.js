@@ -32,6 +32,7 @@ const MASTER_MODULES = [
     { id: 'loot', label: '💎 Loot' },
 ];
 
+// ✅ LISTA DE JOGADORES – APENAS O QUE ELES PODEM VER
 const PLAYER_MODULES = [
     { id: 'ficha', label: '📋 Minha Ficha' },
     { id: 'dados', label: '🎲 Dados' },
@@ -41,18 +42,18 @@ const PLAYER_MODULES = [
     { id: 'calendario', label: '📅 Calendário' },
     { id: 'chat', label: '💬 Chat' },
     { id: 'faccoes', label: '🏛️ Facções' },
-    { id: 'avisos', label: '📢 Avisos' }, // ✅ pode VER, não criar
+    { id: 'avisos', label: '📢 Avisos' },
     { id: 'notas', label: '📝 Notas' },
     { id: 'busca', label: '🔍 Buscar (Ctrl+K)' },
-    { id: 'configuracoes', label: '⚙️ Configurações' }, // apenas tema
+    { id: 'configuracoes', label: '⚙️ Configurações' },
     { id: 'relacionamentos', label: '🤝 Relacionamentos' },
     { id: 'macros', label: '🎲 Macros' },
-    // ❌ Removidos: mapa, roteiro, loot, npc, diario (só mestre)
 ];
 
 // ============================================================
 // 2. Funções auxiliares
 // ============================================================
+
 function getBasePath() {
     const scriptUrl = import.meta.url;
     return scriptUrl.substring(0, scriptUrl.lastIndexOf('/assets/js/')) + '/';
