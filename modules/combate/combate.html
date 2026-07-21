@@ -1,10 +1,39 @@
 <div class="panel fade-in">
     <div class="panel-header">⚔️ Combate</div>
 
+    <!-- Painel de Ações do Turno -->
+    <div id="actionPanel" style="background:var(--bg-2); padding:12px; border-radius:8px; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+            <span id="turnoAtivo" style="font-weight:600; color:var(--gold);">Aguardando...</span>
+            <span id="turnoCronometro" style="font-size:1.1rem; color:var(--text-dim);">⏱️ --</span>
+        </div>
+        <div id="acoesDisponiveis" style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+            <button class="btn btn-sm" data-acao="attack">⚔️ Atacar</button>
+            <button class="btn btn-sm" data-acao="defend">🛡️ Defender</button>
+            <button class="btn btn-sm" data-acao="dodge">💨 Esquivar</button>
+            <button class="btn btn-sm" data-acao="technique">✨ Técnica</button>
+            <button class="btn btn-sm" data-acao="item">🎒 Item</button>
+            <button class="btn btn-sm" data-acao="domain">🌌 Domínio</button>
+            <button class="btn btn-sm" data-acao="flee">🏃 Fugir</button>
+        </div>
+        <div id="subAcaoPanel" style="margin-top:8px; display:none; background:var(--bg-3); padding:8px; border-radius:6px;">
+            <div id="subAcaoConteudo"></div>
+            <button class="btn btn-sm mt-1" id="btnCancelarAcao">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Resultado da ação -->
+    <div id="resultadoAcao" style="background:var(--bg-3); padding:10px; border-radius:6px; margin-bottom:12px; display:none; font-size:0.9rem; border-left:3px solid var(--gold);">
+        <div id="resultadoAcaoConteudo"></div>
+        <button class="btn btn-sm mt-1" id="btnFecharResultado">Fechar</button>
+    </div>
+
+    <!-- Modo Treino -->
     <div class="mt-2" style="font-size:0.85rem;">
         <label><input type="checkbox" id="modoTreino"> 🥊 Modo Treino (não salva dano)</label>
     </div>
 
+    <!-- Condições -->
     <div class="mt-2" style="font-size:0.85rem;">
         <strong>Aplicar Condição:</strong>
         <select id="condTipo">
@@ -15,29 +44,6 @@
         </select>
         <input type="number" id="condDuracao" value="1" min="1" style="width:60px;" placeholder="Rodadas">
         <button class="btn btn-sm" id="btnAplicarCond">Aplicar</button>
-    </div>
-
-    <div class="mt-2">
-        <button class="btn btn-sm" id="btnResistDesesperada">💪 Resistência Desesperada (5 EA)</button>
-        <span id="resistStatus" style="font-size:0.8rem;color:var(--text-dim);margin-left:8px;"></span>
-    </div>
-
-    <div class="mt-2">
-        <button class="btn btn-sm btn-red" id="btnFugir">🏃 Fugir do Combate (Atletismo CD 15)</button>
-        <span id="fugirStatus" style="font-size:0.8rem;color:var(--text-dim);margin-left:8px;"></span>
-    </div>
-
-    <div class="mt-2" style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-sm" id="btnAcaoPreparada">⚡ Ação Preparada</button>
-        <button class="btn btn-sm" id="btnMestreInvisivel">🕵️ Mestre Invisível</button>
-        <span id="mestreInvisivelStatus" style="font-size:0.8rem;color:var(--text-dim);">👁️ Visível</span>
-    </div>
-
-    <!-- ⏳ CRONÔMETRO -->
-    <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-        <button class="btn btn-sm" id="btnIniciarCronometro">⏱️ Iniciar Turno (30s)</button>
-        <span id="cronometroDisplay" style="font-size:1.2rem; font-weight:bold; color:var(--gold);">--</span>
-        <button class="btn btn-sm btn-red" id="btnPararCronometro" style="display:none;">⏹️ Parar</button>
     </div>
 
     <div class="grid-2 fade-in">
@@ -54,8 +60,6 @@
             <div class="mt-2" style="display:flex;gap:8px;">
                 <button class="btn btn-gold" id="btnAddCombat">➕ Adicionar</button>
                 <button class="btn" id="btnRollAll">🎲 Rolar d20</button>
-                <button class="btn btn-sm" id="btnExportCombate">📤 Exportar</button>
-                <button class="btn btn-sm" id="btnImportCombate">📥 Importar</button>
             </div>
             <div class="dice-area mt-2">
                 <span style="font-size:0.75rem;color:var(--text-dim);">Dados rápidos:</span>

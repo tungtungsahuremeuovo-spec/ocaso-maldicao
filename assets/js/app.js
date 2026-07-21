@@ -1,4 +1,6 @@
 // assets/js/app.js
+import { openDatabase, saveData, loadData, clearAllData, saveSlot, loadSlot } from '../core/database/indexedDB.js';
+
 class AppState {
     constructor() {
         this.role = localStorage.getItem('ocaso_role') || null;
@@ -7,8 +9,10 @@ class AppState {
         this.connection = null;
         this.data = this.getDefaultData();
         this.subscribers = new Map();
+        this._dbReady = false;
 
         if (!this.data.campaignLog) this.data.campaignLog = [];
+        this.initDB();
 
         if (this.role === 'master') {
             this.loadLocal();
@@ -18,7 +22,25 @@ class AppState {
         } else if (this.role === 'player' && this.hostId) {
             this.connectToHost(this.hostId);
         } else if (this.role === 'spectator' && this.hostId) {
-            this.connectToHost(this.hostId); // Espectador também se conecta
+            this.connectToHost(this.hostId);
+        }
+    }
+
+    async initDB() {
+        try {
+            await openDatabase();
+            this._dbReady = true;
+            // Carrega dados do IndexedDB se existirem
+            const saved = await loadData();
+            if (saved) {
+                this.data = { ...this.getDefaultData(), ...saved };
+                if (!this.data.campaignLog) this.data.campaignLog = [];
+                this.notifyAll();
+            }
+        } catch (e) {
+            console.warn('IndexedDB não disponível, usando localStorage como fallback:', e);
+            // Fallback para localStorage
+            this.loadLocalFallback();
         }
     }
 
@@ -27,21 +49,71 @@ class AppState {
             campaign: 'A Sombra do Dragão',
             characters: [],
             sessions: [],
-            combat: { combatants: [], turnIndex: 0, luckPoints: 0, jackpotUsed: false },
+            combat: { 
+                combatants: [], 
+                turnIndex: 0, 
+                luckPoints: 0, 
+                jackpotUsed: false,
+                historico: [],
+                currentRound: 0
+            },
             quests: [],
             items: [],
             spells: [],
             domains: [],
             lores: [],
             settings: { theme: 'default', autoSave: true, language: 'pt-BR' },
-            sessionStatus: 'waiting' // waiting, playing, paused
+            sessionStatus: 'waiting',
+            avisos: [],
+            notas: '',
+            npcs: [],
+            relacionamentos: [],
+            macros: [],
+            roteiro: [],
+            loot: []
         };
+    }
+
+    // Fallback para localStorage (caso IndexedDB não funcione)
+    loadLocalFallback() {
+        const saved = localStorage.getItem('ocaso_data');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            this.data = { ...this.getDefaultData(), ...parsed };
+            if (!this.data.campaignLog) this.data.campaignLog = [];
+        }
+    }
+
+    saveLocallyFallback() {
+        localStorage.setItem('ocaso_data', JSON.stringify(this.data));
+    }
+
+    async saveLocally() {
+        try {
+            await saveData(this.data);
+        } catch (e) {
+            console.warn('Erro ao salvar no IndexedDB, usando fallback:', e);
+            this.saveLocallyFallback();
+        }
+    }
+
+    async loadLocal() {
+        try {
+            const saved = await loadData();
+            if (saved) {
+                this.data = { ...this.getDefaultData(), ...saved };
+                if (!this.data.campaignLog) this.data.campaignLog = [];
+            }
+        } catch (e) {
+            this.loadLocalFallback();
+        }
     }
 
     setRole(role) {
         this.role = role;
         localStorage.setItem('ocaso_role', role);
     }
+
     getRole() { return this.role; }
 
     clearRole() {
@@ -52,18 +124,7 @@ class AppState {
         this.destroyOnlineRoom();
     }
 
-    saveLocally() {
-        localStorage.setItem('ocaso_data', JSON.stringify(this.data));
-    }
-    loadLocal() {
-        const saved = localStorage.getItem('ocaso_data');
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            this.data = { ...this.getDefaultData(), ...parsed };
-            if (!this.data.campaignLog) this.data.campaignLog = [];
-        }
-    }
-
+    // P2P (mantido igual)
     startHosting(id) {
         if (this.peer) this.destroyOnlineRoom();
         this.peer = new Peer(id);
@@ -77,20 +138,14 @@ class AppState {
                 conn.send({ type: 'fullSync', data: this.data });
             });
             conn.on('data', (received) => {
-                // Processar mensagens do jogador
                 if (received.type === 'rollRequest') {
-                    if (window.showToast) {
-                        window.showToast(`📨 ${received.player} pede rolagem de ${received.skill} (CD ${received.difficulty})`);
-                    }
-                    // O mestre pode responder com um roll (exemplo)
-                    // const roll = Math.floor(Math.random() * 20) + 1;
-                    // conn.send({ type: 'rollResponse', skill: received.skill, difficulty: received.difficulty, roll, approved: true });
+                    window.showToast?.(`📨 ${received.player} pede rolagem de ${received.skill} (CD ${received.difficulty})`);
                 }
                 if (received.type === 'chat') {
-                    // já tratado no chat.js
+                    // tratado no chat.js
                 }
                 if (received.type === 'notification') {
-                    // já tratado
+                    // tratado
                 }
             });
         });
@@ -109,7 +164,7 @@ class AppState {
                         conn.send({ type: 'fullSync', data: this.data });
                     });
                     conn.on('data', (msg) => {
-                        // Lidar com mensagens do jogador
+                        // lidar com mensagens
                     });
                 });
                 resolve(id);
@@ -150,6 +205,7 @@ class AppState {
                     this.data = { ...this.getDefaultData(), ...msg.data };
                     if (!this.data.campaignLog) this.data.campaignLog = [];
                     this.notifyAll();
+                    this.saveLocally();
                 }
                 if (msg.type === 'notification') {
                     window.showToast?.('🔔 ' + msg.message);
@@ -158,16 +214,12 @@ class AppState {
                     window._handleChatMessage?.(msg);
                 }
                 if (msg.type === 'rollResponse') {
-                    // Recebe resposta do mestre para um pedido de rolagem
                     const sucesso = msg.roll >= msg.difficulty;
                     const el = document.getElementById('rollRequestResult');
                     if (el) {
                         el.innerHTML = `🎲 ${msg.skill}: ${msg.roll} (${sucesso ? '✅ Sucesso' : '❌ Falha'})`;
                     }
                     window.showToast?.(`📨 ${msg.skill}: ${msg.roll} (${sucesso ? 'Sucesso' : 'Falha'})`);
-                }
-                if (msg.type === 'rollRequest') {
-                    // Jogador recebe notificação? (opcional)
                 }
             });
         });
@@ -181,18 +233,17 @@ class AppState {
 
     get(domain) { return this.data[domain]; }
 
-    set(domain, value) {
-        // Espectador não pode modificar dados
+    async set(domain, value) {
         if (this.role === 'spectator') {
             console.warn('Espectador não pode modificar dados.');
             return;
         }
         this.data[domain] = value;
         if (this.role === 'master') {
-            this.saveLocally();
+            await this.saveLocally();
             this.broadcastUpdate();
         } else if (this.role === 'player') {
-            localStorage.setItem('ocaso_playerData', JSON.stringify(this.data));
+            await this.saveLocally();
         }
         this.notify(domain);
     }
@@ -210,17 +261,20 @@ class AppState {
     notify(domain) {
         (this.subscribers.get(domain) || []).forEach(fn => fn(this.data[domain]));
     }
+
     notifyAll() {
         Object.keys(this.data).forEach(d => this.notify(d));
     }
 
-    reset() {
+    async reset() {
         if (this.role === 'spectator') return;
         this.data = this.getDefaultData();
         if (!this.data.campaignLog) this.data.campaignLog = [];
         if (this.role === 'master') {
-            this.saveLocally();
+            await this.saveLocally();
             this.broadcastUpdate();
+        } else {
+            await this.saveLocally();
         }
         this.notifyAll();
     }
@@ -234,9 +288,8 @@ class AppState {
             this.saveLocally();
             this.broadcastUpdate();
         } else if (this.role === 'player') {
-            localStorage.setItem('ocaso_playerData', JSON.stringify(this.data));
+            this.saveLocally();
         }
-        // Espectador não loga
     }
 
     enviarNotificacao(mensagem) {
@@ -262,7 +315,14 @@ class AppState {
                 pericias: c.pericias,
                 cicatrizes: c.cicatrizes,
                 ambicao: c.ambicao,
-                notas: c.notas
+                notas: c.notas,
+                forca: c.forca,
+                destreza: c.destreza,
+                constituicao: c.constituicao,
+                inteligencia: c.inteligencia,
+                sabedoria: c.sabedoria,
+                presenca: c.presenca,
+                reputacao: c.reputacao
             })),
             quests: this.data.quests.filter(q => q.visivelJogadores).map(q => ({
                 id: q.id,

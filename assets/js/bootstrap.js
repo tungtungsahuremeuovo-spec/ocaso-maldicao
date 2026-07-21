@@ -32,7 +32,6 @@ const MASTER_MODULES = [
     { id: 'loot', label: '💎 Loot' },
 ];
 
-// ✅ LISTA DE JOGADORES – APENAS O QUE ELES PODEM VER
 const PLAYER_MODULES = [
     { id: 'ficha', label: '📋 Minha Ficha' },
     { id: 'dados', label: '🎲 Dados' },
@@ -109,9 +108,6 @@ function setupMenuScreen() {
     btnMaster.addEventListener('click', () => {
         console.log('👑 Clicou em Mestre');
         appState.setRole('master');
-        if (!localStorage.getItem('ocaso_data')) {
-            appState.saveLocally();
-        }
         location.reload();
     });
 
@@ -170,6 +166,7 @@ function initializeApp() {
         });
     }
 
+    // ✅ TOGGLE SIDEBAR
     const btnToggle = document.getElementById('btnToggleSidebar');
     if (btnToggle) {
         btnToggle.addEventListener('click', () => {
@@ -182,6 +179,7 @@ function initializeApp() {
         });
     }
 
+    // ✅ ATALHOS DE TECLADO
     import('./atalhos.js').then(mod => mod.init()).catch(console.warn);
 }
 
@@ -216,6 +214,9 @@ function loadDefaultContent(role) {
     navigateTo('dashboard');
 }
 
+// ============================================================
+// 5. Inicialização e globais
+// ============================================================
 document.addEventListener('DOMContentLoaded', () => {
     setupMenuScreen();
 });
