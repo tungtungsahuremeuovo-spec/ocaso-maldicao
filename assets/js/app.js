@@ -1,6 +1,4 @@
 // assets/js/app.js
-import { openDatabase, saveData, loadData, clearAllData, saveSlot, loadSlot, listSlots } from '../core/database/indexedDB.js';
-
 class AppState {
     constructor() {
         this.role = localStorage.getItem('ocaso_role') || null;
@@ -13,11 +11,8 @@ class AppState {
 
         if (!this.data.campaignLog) this.data.campaignLog = [];
 
-        // Inicializa IndexedDB (se falhar, usa localStorage)
-        this.initDB().catch(() => {
-            console.warn('IndexedDB não disponível, usando localStorage como fallback.');
-            this.loadLocalFallback();
-        });
+        // Tenta carregar do IndexedDB, se falhar usa localStorage
+        this.initDB();
 
         if (this.role === 'master') {
             this.loadLocal();
@@ -31,19 +26,31 @@ class AppState {
         }
     }
 
+    async initDB() {
+        try {
+            // Tenta carregar o módulo IndexedDB dinamicamente
+            const { openDatabase, loadData } = await import('../core/database/indexedDB.js');
+            this._db = { openDatabase, loadData, saveData: (await import('../core/database/indexedDB.js')).saveData };
+            this._dbReady = true;
+            const saved = await this._db.loadData();
+            if (saved) {
+                this.data = { ...this.getDefaultData(), ...saved };
+                if (!this.data.campaignLog) this.data.campaignLog = [];
+                this.notifyAll();
+            }
+        } catch (e) {
+            console.warn('IndexedDB não disponível, usando localStorage como fallback:', e);
+            this._dbReady = false;
+            this.loadLocalFallback();
+        }
+    }
+
     getDefaultData() {
         return {
             campaign: 'A Sombra do Dragão',
             characters: [],
             sessions: [],
-            combat: { 
-                combatants: [], 
-                turnIndex: 0, 
-                luckPoints: 0, 
-                jackpotUsed: false,
-                historico: [],
-                currentRound: 0
-            },
+            combat: { combatants: [], turnIndex: 0, luckPoints: 0, jackpotUsed: false, historico: [], currentRound: 0 },
             quests: [],
             items: [],
             spells: [],
@@ -61,23 +68,6 @@ class AppState {
         };
     }
 
-    async initDB() {
-        try {
-            await openDatabase();
-            this._dbReady = true;
-            // Carrega dados do IndexedDB se existirem
-            const saved = await loadData();
-            if (saved) {
-                this.data = { ...this.getDefaultData(), ...saved };
-                if (!this.data.campaignLog) this.data.campaignLog = [];
-                this.notifyAll();
-            }
-        } catch (e) {
-            console.warn('Erro ao inicializar IndexedDB:', e);
-            throw e; // repassa para o catch do construtor
-        }
-    }
-
     loadLocalFallback() {
         const saved = localStorage.getItem('ocaso_data');
         if (saved) {
@@ -86,45 +76,48 @@ class AppState {
                 this.data = { ...this.getDefaultData(), ...parsed };
                 if (!this.data.campaignLog) this.data.campaignLog = [];
             } catch (e) {
-                console.warn('Erro ao parsear dados do localStorage:', e);
+                console.warn('Erro ao parsear localStorage:', e);
             }
         }
     }
 
+    saveLocallyFallback() {
+        localStorage.setItem('ocaso_data', JSON.stringify(this.data));
+    }
+
     async saveLocally() {
-        if (this._dbReady) {
+        if (this._dbReady && this._db) {
             try {
-                await saveData(this.data);
+                await this._db.saveData(this.data);
                 return;
             } catch (e) {
                 console.warn('Erro ao salvar no IndexedDB, usando fallback:', e);
             }
         }
-        // Fallback para localStorage
-        localStorage.setItem('ocaso_data', JSON.stringify(this.data));
+        this.saveLocallyFallback();
     }
 
     async loadLocal() {
-        if (this._dbReady) {
+        if (this._dbReady && this._db) {
             try {
-                const saved = await loadData();
+                const saved = await this._db.loadData();
                 if (saved) {
                     this.data = { ...this.getDefaultData(), ...saved };
                     if (!this.data.campaignLog) this.data.campaignLog = [];
                     return;
                 }
             } catch (e) {
-                console.warn('Erro ao carregar do IndexedDB:', e);
+                console.warn('Erro ao carregar do IndexedDB, usando fallback:', e);
             }
         }
         this.loadLocalFallback();
     }
 
+    // ---- Papel ----
     setRole(role) {
         this.role = role;
         localStorage.setItem('ocaso_role', role);
     }
-
     getRole() { return this.role; }
 
     clearRole() {
@@ -135,6 +128,7 @@ class AppState {
         this.destroyOnlineRoom();
     }
 
+    // ---- P2P ----
     startHosting(id) {
         if (this.peer) this.destroyOnlineRoom();
         this.peer = new Peer(id);
@@ -241,6 +235,7 @@ class AppState {
         localStorage.setItem('ocaso_hostId', hostId);
     }
 
+    // ---- Gerenciamento de dados ----
     get(domain) { return this.data[domain]; }
 
     async set(domain, value) {
