@@ -86,7 +86,6 @@ export async function importDatabase(jsonData) {
     return data;
 }
 
-// Para slots de salvamento
 export async function saveSlot(slotName, data) {
     if (!db) await openDatabase();
     return new Promise((resolve, reject) => {

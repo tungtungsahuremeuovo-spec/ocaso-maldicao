@@ -1,5 +1,5 @@
 // assets/js/app.js
-import { openDatabase, saveData, loadData, clearAllData, saveSlot, loadSlot } from '../core/database/indexedDB.js';
+import { openDatabase, saveData, loadData, clearAllData, saveSlot, loadSlot, listSlots } from '../core/database/indexedDB.js';
 
 class AppState {
     constructor() {
@@ -12,7 +12,12 @@ class AppState {
         this._dbReady = false;
 
         if (!this.data.campaignLog) this.data.campaignLog = [];
-        this.initDB();
+
+        // Inicializa IndexedDB (se falhar, usa localStorage)
+        this.initDB().catch(() => {
+            console.warn('IndexedDB não disponível, usando localStorage como fallback.');
+            this.loadLocalFallback();
+        });
 
         if (this.role === 'master') {
             this.loadLocal();
@@ -23,24 +28,6 @@ class AppState {
             this.connectToHost(this.hostId);
         } else if (this.role === 'spectator' && this.hostId) {
             this.connectToHost(this.hostId);
-        }
-    }
-
-    async initDB() {
-        try {
-            await openDatabase();
-            this._dbReady = true;
-            // Carrega dados do IndexedDB se existirem
-            const saved = await loadData();
-            if (saved) {
-                this.data = { ...this.getDefaultData(), ...saved };
-                if (!this.data.campaignLog) this.data.campaignLog = [];
-                this.notifyAll();
-            }
-        } catch (e) {
-            console.warn('IndexedDB não disponível, usando localStorage como fallback:', e);
-            // Fallback para localStorage
-            this.loadLocalFallback();
         }
     }
 
@@ -74,39 +61,63 @@ class AppState {
         };
     }
 
-    // Fallback para localStorage (caso IndexedDB não funcione)
-    loadLocalFallback() {
-        const saved = localStorage.getItem('ocaso_data');
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            this.data = { ...this.getDefaultData(), ...parsed };
-            if (!this.data.campaignLog) this.data.campaignLog = [];
-        }
-    }
-
-    saveLocallyFallback() {
-        localStorage.setItem('ocaso_data', JSON.stringify(this.data));
-    }
-
-    async saveLocally() {
+    async initDB() {
         try {
-            await saveData(this.data);
-        } catch (e) {
-            console.warn('Erro ao salvar no IndexedDB, usando fallback:', e);
-            this.saveLocallyFallback();
-        }
-    }
-
-    async loadLocal() {
-        try {
+            await openDatabase();
+            this._dbReady = true;
+            // Carrega dados do IndexedDB se existirem
             const saved = await loadData();
             if (saved) {
                 this.data = { ...this.getDefaultData(), ...saved };
                 if (!this.data.campaignLog) this.data.campaignLog = [];
+                this.notifyAll();
             }
         } catch (e) {
-            this.loadLocalFallback();
+            console.warn('Erro ao inicializar IndexedDB:', e);
+            throw e; // repassa para o catch do construtor
         }
+    }
+
+    loadLocalFallback() {
+        const saved = localStorage.getItem('ocaso_data');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                this.data = { ...this.getDefaultData(), ...parsed };
+                if (!this.data.campaignLog) this.data.campaignLog = [];
+            } catch (e) {
+                console.warn('Erro ao parsear dados do localStorage:', e);
+            }
+        }
+    }
+
+    async saveLocally() {
+        if (this._dbReady) {
+            try {
+                await saveData(this.data);
+                return;
+            } catch (e) {
+                console.warn('Erro ao salvar no IndexedDB, usando fallback:', e);
+            }
+        }
+        // Fallback para localStorage
+        localStorage.setItem('ocaso_data', JSON.stringify(this.data));
+    }
+
+    async loadLocal() {
+        if (this._dbReady) {
+            try {
+                const saved = await loadData();
+                if (saved) {
+                    this.data = { ...this.getDefaultData(), ...saved };
+                    if (!this.data.campaignLog) this.data.campaignLog = [];
+                    return;
+                }
+            } catch (e) {
+                console.warn('Erro ao carregar do IndexedDB:', e);
+            }
+        }
+        this.loadLocalFallback();
     }
 
     setRole(role) {
@@ -124,7 +135,6 @@ class AppState {
         this.destroyOnlineRoom();
     }
 
-    // P2P (mantido igual)
     startHosting(id) {
         if (this.peer) this.destroyOnlineRoom();
         this.peer = new Peer(id);
