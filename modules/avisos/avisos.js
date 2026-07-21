@@ -3,22 +3,23 @@ import appState from '../../assets/js/app.js';
 import { generateId, escapeHtml } from '../../core/utils/utils.js';
 
 export function init() {
-    // Verifica se os elementos existem antes de prosseguir
-    const avisoInput = document.getElementById('avisoInput');
-    const btnAddAviso = document.getElementById('btnAddAviso');
-    if (!avisoInput || !btnAddAviso) {
-        console.warn('Avisos: elementos não encontrados.');
-        return;
+    const role = appState.getRole();
+    const form = document.getElementById('avisoForm');
+
+    // Apenas mestre vê o formulário de publicação
+    if (role === 'master') {
+        form.style.display = 'block';
+        document.getElementById('btnAddAviso').addEventListener('click', addAviso);
+        document.getElementById('avisoInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addAviso();
+        });
+    } else {
+        form.style.display = 'none';
     }
 
     if (!appState.get('avisos')) appState.set('avisos', []);
     renderAvisos();
     appState.subscribe('avisos', renderAvisos);
-
-    btnAddAviso.addEventListener('click', addAviso);
-    avisoInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') addAviso();
-    });
 }
 
 function addAviso() {
@@ -30,7 +31,7 @@ function addAviso() {
     avisos.push({
         id: generateId(),
         texto,
-        autor: appState.getRole() === 'master' ? '👑 Mestre' : 'Jogador',
+        autor: '👑 Mestre',
         timestamp: Date.now()
     });
     appState.set('avisos', avisos);
@@ -41,10 +42,7 @@ function addAviso() {
 
 function renderAvisos() {
     const container = document.getElementById('avisosList');
-    if (!container) {
-        console.warn('avisosList não encontrado');
-        return;
-    }
+    if (!container) return;
     const avisos = appState.get('avisos') || [];
     if (!avisos.length) {
         container.innerHTML = '<p class="empty-state">Nenhum aviso publicado.</p>';

@@ -1,8 +1,11 @@
 <div class="panel fade-in">
     <div class="panel-header">📢 Quadro de Avisos</div>
-    <div style="display:flex; gap:8px; margin-bottom:12px;">
-        <input id="avisoInput" placeholder="Escreva um aviso..." style="flex:1;">
-        <button class="btn btn-gold" id="btnAddAviso">Publicar</button>
+    <!-- Bloco de publicação: aparece apenas para mestre -->
+    <div id="avisoForm" style="display:none;">
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+            <input id="avisoInput" placeholder="Escreva um aviso..." style="flex:1;">
+            <button class="btn btn-gold" id="btnAddAviso">Publicar</button>
+        </div>
     </div>
     <div id="avisosList" style="max-height:400px; overflow-y:auto;">
         <p class="empty-state">Nenhum aviso publicado.</p>

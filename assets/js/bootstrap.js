@@ -20,7 +20,6 @@ const MASTER_MODULES = [
     { id: 'faccoes', label: '🏛️ Facções' },
     { id: 'diario', label: '📖 Diário' },
     { id: 'npc', label: '👥 NPCs' },
-    // ❌ REMOVIDO: { id: 'mapa', label: '🗺️ Mapa' },
     { id: 'ferramentas', label: '🛠️ Ferramentas' },
     { id: 'sala', label: '🚪 Sala' },
     { id: 'avisos', label: '📢 Avisos' },
@@ -42,24 +41,18 @@ const PLAYER_MODULES = [
     { id: 'calendario', label: '📅 Calendário' },
     { id: 'chat', label: '💬 Chat' },
     { id: 'faccoes', label: '🏛️ Facções' },
-    { id: 'diario', label: '📖 Diário' },
-    { id: 'npc', label: '👥 NPCs' },
-    // ❌ REMOVIDO: { id: 'mapa', label: '🗺️ Mapa' },
-    { id: 'sala', label: '🚪 Sala' },
-    { id: 'avisos', label: '📢 Avisos' },
+    { id: 'avisos', label: '📢 Avisos' }, // ✅ pode VER, não criar
     { id: 'notas', label: '📝 Notas' },
     { id: 'busca', label: '🔍 Buscar (Ctrl+K)' },
-    { id: 'configuracoes', label: '⚙️ Configurações' },
+    { id: 'configuracoes', label: '⚙️ Configurações' }, // apenas tema
     { id: 'relacionamentos', label: '🤝 Relacionamentos' },
     { id: 'macros', label: '🎲 Macros' },
-    { id: 'roteiro', label: '📋 Roteiro' },
-    { id: 'loot', label: '💎 Loot' },
+    // ❌ Removidos: mapa, roteiro, loot, npc, diario (só mestre)
 ];
 
 // ============================================================
 // 2. Funções auxiliares
 // ============================================================
-
 function getBasePath() {
     const scriptUrl = import.meta.url;
     return scriptUrl.substring(0, scriptUrl.lastIndexOf('/assets/js/')) + '/';
@@ -176,7 +169,6 @@ function initializeApp() {
         });
     }
 
-    // ✅ TOGGLE SIDEBAR
     const btnToggle = document.getElementById('btnToggleSidebar');
     if (btnToggle) {
         btnToggle.addEventListener('click', () => {
@@ -189,7 +181,6 @@ function initializeApp() {
         });
     }
 
-    // ✅ ATALHOS DE TECLADO
     import('./atalhos.js').then(mod => mod.init()).catch(console.warn);
 }
 
@@ -197,9 +188,7 @@ function loadSidebar(role) {
     const nav = document.getElementById('sidebarNav');
     if (!nav) return;
 
-    const modules = role === 'master' ? MASTER_MODULES : 
-                    role === 'player' ? PLAYER_MODULES : 
-                    PLAYER_MODULES;
+    const modules = role === 'master' ? MASTER_MODULES : PLAYER_MODULES;
 
     nav.innerHTML = modules.map(m =>
         `<a href="#" data-module="${m.id}" class="nav-link">${m.label}</a>`
@@ -226,9 +215,6 @@ function loadDefaultContent(role) {
     navigateTo('dashboard');
 }
 
-// ============================================================
-// 5. Inicialização e globais
-// ============================================================
 document.addEventListener('DOMContentLoaded', () => {
     setupMenuScreen();
 });

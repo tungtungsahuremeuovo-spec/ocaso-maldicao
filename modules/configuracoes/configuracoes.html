@@ -1,59 +1,57 @@
 <div class="panel fade-in">
     <div class="panel-header">⚙️ Configurações</div>
 
-    <div class="flex-row">
-        <button class="btn btn-gold" id="btnExport">📤 Exportar Campanha</button>
-        <button class="btn btn-gold" id="btnExportPlayer">🎭 Exportar Pacote do Jogador</button>
-        <button class="btn" id="btnImport">📥 Importar Campanha</button>
-        <button class="btn btn-red" id="btnReset">⚠️ Resetar Tudo</button>
-    </div>
-
-    <!-- Sala Online -->
-    <div class="mt-2" style="border-top:1px solid var(--border); padding-top:12px;">
-        <p style="font-weight:600; color:var(--gold);">🌐 Sala Online</p>
-        <p id="roomInfo" style="font-size:0.85rem; color:var(--text-dim);">Nenhuma sala ativa.</p>
+    <!-- MESTRE: tudo -->
+    <div id="configMaster" style="display:none;">
         <div class="flex-row">
-            <button class="btn btn-gold" id="btnCreateRoom">🏠 Criar Nova Sala</button>
-            <button class="btn btn-red" id="btnLeaveRoom" style="display:none;">🚪 Sair da Sala</button>
-            <button class="btn btn-sm" id="btnCopyRoomId" style="display:none;">📋 Copiar ID</button>
+            <button class="btn btn-gold" id="btnExport">📤 Exportar Campanha</button>
+            <button class="btn btn-gold" id="btnExportPlayer">🎭 Exportar Pacote do Jogador</button>
+            <button class="btn" id="btnImport">📥 Importar Campanha</button>
+            <button class="btn btn-red" id="btnReset">⚠️ Resetar Tudo</button>
+        </div>
+
+        <div class="mt-2">
+            <p style="font-weight:600; color:var(--gold);">🌐 Sala Online</p>
+            <p id="roomInfo" style="font-size:0.85rem; color:var(--text-dim);">Nenhuma sala ativa.</p>
+            <div class="flex-row">
+                <button class="btn btn-gold" id="btnCreateRoom">🏠 Criar Nova Sala</button>
+                <button class="btn btn-red" id="btnLeaveRoom" style="display:none;">🚪 Sair da Sala</button>
+                <button class="btn btn-sm" id="btnCopyRoomId" style="display:none;">📋 Copiar ID</button>
+            </div>
+        </div>
+
+        <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:12px;">
+            <label style="font-weight:600; color:var(--gold);">💾 Slots de Salvamento</label>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
+                <select id="slotSelector">
+                    <option value="slot1">Slot 1</option>
+                    <option value="slot2">Slot 2</option>
+                    <option value="slot3">Slot 3</option>
+                </select>
+                <button class="btn btn-sm" id="btnSalvarSlot">💾 Salvar neste slot</button>
+                <button class="btn btn-sm" id="btnCarregarSlot">📂 Carregar slot</button>
+            </div>
+        </div>
+
+        <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:12px;">
+            <label style="font-weight:600; color:var(--gold);">🔗 Discord Webhook</label>
+            <input id="discordWebhook" placeholder="URL do webhook..." style="width:100%; margin-top:4px;">
+            <button class="btn btn-sm mt-1" id="btnTestarWebhook">📨 Testar</button>
+            <span id="webhookStatus" style="font-size:0.8rem; color:var(--text-dim);"></span>
+        </div>
+
+        <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:12px;">
+            <button class="btn btn-gold" id="btnExportCampanhaPDF">📄 Exportar Campanha em PDF</button>
         </div>
     </div>
 
-    <!-- Slots de Salvamento -->
-    <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:12px;">
-        <label style="font-weight:600; color:var(--gold);">💾 Slots de Salvamento</label>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
-            <select id="slotSelector">
-                <option value="slot1">Slot 1</option>
-                <option value="slot2">Slot 2</option>
-                <option value="slot3">Slot 3</option>
-            </select>
-            <button class="btn btn-sm" id="btnSalvarSlot">💾 Salvar neste slot</button>
-            <button class="btn btn-sm" id="btnCarregarSlot">📂 Carregar slot</button>
-        </div>
-    </div>
-
-    <!-- Tema -->
+    <!-- TEMA: visível para todos -->
     <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:12px;">
         <label style="font-weight:600; color:var(--gold);">🎨 Tema</label>
         <select id="themeSelector" style="margin-top:4px; width:auto;">
             <option value="dark">🌙 Escuro</option>
             <option value="light">☀️ Claro</option>
         </select>
-    </div>
-
-    <!-- Discord Webhook -->
-    <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:12px;">
-        <label style="font-weight:600; color:var(--gold);">🔗 Discord Webhook</label>
-        <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:4px;">Insira a URL do webhook do Discord para receber notificações de rolagens e eventos importantes.</p>
-        <input id="discordWebhook" placeholder="https://discord.com/api/webhooks/..." style="width:100%; margin-top:4px;">
-        <button class="btn btn-sm mt-1" id="btnTestarWebhook">📨 Testar</button>
-        <span id="webhookStatus" style="font-size:0.8rem; color:var(--text-dim); margin-left:8px;"></span>
-    </div>
-
-    <!-- Exportar PDF -->
-    <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:12px;">
-        <button class="btn btn-gold" id="btnExportCampanhaPDF">📄 Exportar Campanha em PDF</button>
     </div>
 
     <div class="mt-2" style="font-size:0.8rem;color:var(--text-dim);">
