@@ -20,14 +20,13 @@ const MASTER_MODULES = [
     { id: 'faccoes', label: '🏛️ Facções' },
     { id: 'diario', label: '📖 Diário' },
     { id: 'npc', label: '👥 NPCs' },
-    { id: 'mapa', label: '🗺️ Mapa' },
+    // ❌ REMOVIDO: { id: 'mapa', label: '🗺️ Mapa' },
     { id: 'ferramentas', label: '🛠️ Ferramentas' },
     { id: 'sala', label: '🚪 Sala' },
     { id: 'avisos', label: '📢 Avisos' },
     { id: 'notas', label: '📝 Notas' },
     { id: 'busca', label: '🔍 Buscar (Ctrl+K)' },
     { id: 'configuracoes', label: '⚙️ Configurações' },
-    // ✅ NOVOS MÓDULOS
     { id: 'relacionamentos', label: '🤝 Relacionamentos' },
     { id: 'macros', label: '🎲 Macros' },
     { id: 'roteiro', label: '📋 Roteiro' },
@@ -45,13 +44,12 @@ const PLAYER_MODULES = [
     { id: 'faccoes', label: '🏛️ Facções' },
     { id: 'diario', label: '📖 Diário' },
     { id: 'npc', label: '👥 NPCs' },
-    { id: 'mapa', label: '🗺️ Mapa' },
+    // ❌ REMOVIDO: { id: 'mapa', label: '🗺️ Mapa' },
     { id: 'sala', label: '🚪 Sala' },
     { id: 'avisos', label: '📢 Avisos' },
     { id: 'notas', label: '📝 Notas' },
     { id: 'busca', label: '🔍 Buscar (Ctrl+K)' },
     { id: 'configuracoes', label: '⚙️ Configurações' },
-    // ✅ NOVOS MÓDULOS
     { id: 'relacionamentos', label: '🤝 Relacionamentos' },
     { id: 'macros', label: '🎲 Macros' },
     { id: 'roteiro', label: '📋 Roteiro' },
@@ -178,7 +176,7 @@ function initializeApp() {
         });
     }
 
-    // TOGGLE SIDEBAR
+    // ✅ TOGGLE SIDEBAR
     const btnToggle = document.getElementById('btnToggleSidebar');
     if (btnToggle) {
         btnToggle.addEventListener('click', () => {
@@ -191,7 +189,7 @@ function initializeApp() {
         });
     }
 
-    // ATALHOS DE TECLADO
+    // ✅ ATALHOS DE TECLADO
     import('./atalhos.js').then(mod => mod.init()).catch(console.warn);
 }
 
