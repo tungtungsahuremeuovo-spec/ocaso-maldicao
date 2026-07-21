@@ -1,5 +1,15 @@
 <div class="panel fade-in">
     <div class="panel-header">🚪 Sala de Espera</div>
+
+    <!-- Player de música (oculto inicialmente) -->
+    <div id="playerContainer" style="display:none; margin-bottom:12px; background:var(--bg-2); padding:10px; border-radius:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+            <span style="font-weight:600; color:var(--gold);">🎵 Música Ambiente</span>
+            <span id="musicaStatus" style="font-size:0.8rem; color:var(--text-dim);">⏸️ Pausado</span>
+        </div>
+        <div id="youtubePlayer" style="width:100%; aspect-ratio:16/9; margin-top:6px;"></div>
+    </div>
+
     <div id="salaStatus">
         <p>Status: <strong id="sessionStatus">Aguardando...</strong></p>
         <p>Presença: <span id="presencaStatus">🟡 Conectando...</span></p>
