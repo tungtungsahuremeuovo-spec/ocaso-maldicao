@@ -25,9 +25,13 @@ const MASTER_MODULES = [
     { id: 'sala', label: '🚪 Sala' },
     { id: 'avisos', label: '📢 Avisos' },
     { id: 'notas', label: '📝 Notas' },
-    // ✅ BUSCA (Ctrl+K)
     { id: 'busca', label: '🔍 Buscar (Ctrl+K)' },
     { id: 'configuracoes', label: '⚙️ Configurações' },
+    // ✅ NOVOS MÓDULOS
+    { id: 'relacionamentos', label: '🤝 Relacionamentos' },
+    { id: 'macros', label: '🎲 Macros' },
+    { id: 'roteiro', label: '📋 Roteiro' },
+    { id: 'loot', label: '💎 Loot' },
 ];
 
 const PLAYER_MODULES = [
@@ -47,6 +51,11 @@ const PLAYER_MODULES = [
     { id: 'notas', label: '📝 Notas' },
     { id: 'busca', label: '🔍 Buscar (Ctrl+K)' },
     { id: 'configuracoes', label: '⚙️ Configurações' },
+    // ✅ NOVOS MÓDULOS
+    { id: 'relacionamentos', label: '🤝 Relacionamentos' },
+    { id: 'macros', label: '🎲 Macros' },
+    { id: 'roteiro', label: '📋 Roteiro' },
+    { id: 'loot', label: '💎 Loot' },
 ];
 
 // ============================================================
@@ -169,7 +178,7 @@ function initializeApp() {
         });
     }
 
-    // ✅ TOGGLE SIDEBAR
+    // TOGGLE SIDEBAR
     const btnToggle = document.getElementById('btnToggleSidebar');
     if (btnToggle) {
         btnToggle.addEventListener('click', () => {
@@ -182,7 +191,7 @@ function initializeApp() {
         });
     }
 
-    // ✅ ATALHOS DE TECLADO
+    // ATALHOS DE TECLADO
     import('./atalhos.js').then(mod => mod.init()).catch(console.warn);
 }
 
