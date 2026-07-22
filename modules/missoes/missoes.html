@@ -12,18 +12,27 @@
     </div>
     <div class="panel" style="grid-column: 1 / -1;">
         <div class="panel-header">📜 Quadro de Missões</div>
-        <!-- Filtros (visíveis para todos) -->
+
+        <!-- Barra de pesquisa (⭐ 9) -->
+        <input id="pesquisaMissoes" class="list-search" placeholder="🔎 Procurar missão...">
+
+        <!-- Filtros e ordenação -->
         <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
-            <input id="filtroMissoes" placeholder="Filtrar missões..." style="flex:1;">
-            <select id="filtroStatusMissao">
-                <option value="">Todos</option>
+            <select id="filtroStatusMissao" style="flex:1;">
+                <option value="">Todos os status</option>
                 <option value="Ativa">Ativa</option>
                 <option value="Concluída">Concluída</option>
                 <option value="Falha">Falha</option>
             </select>
-            <!-- Botão Limpar: só aparece para mestre -->
+            <div style="display:flex; gap:4px; font-size:0.8rem; color:var(--text-dim); align-items:center;">
+                <span>Ordenar:</span>
+                <button class="btn btn-sm" data-sort="titulo">Título</button>
+                <button class="btn btn-sm" data-sort="status">Status</button>
+                <button class="btn btn-sm" data-sort="recompensa">Recompensa</button>
+            </div>
             <button class="btn btn-sm" id="btnLimparFiltros" style="display:none;">🧹 Limpar</button>
         </div>
+
         <div class="list-container" id="questList"><div class="empty-state">Nenhuma missão disponível.</div></div>
     </div>
 </div>

@@ -1,19 +1,31 @@
 <div class="panel fade-in">
     <div class="panel-header">👥 NPCs</div>
 
-    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
-        <input id="npcNome" placeholder="Nome do NPC" style="flex:1;">
-        <input id="npcVoz" placeholder="Voz (ex: grave, rouca)" style="flex:1;">
-        <select id="npcTipo">
-            <option>Humano</option>
-            <option>Maldição</option>
-            <option>Espírito</option>
-            <option>Shikigami</option>
-            <option>Inimigo</option>
-            <option>Aliado</option>
-        </select>
-        <input type="number" id="npcGrau" value="4" placeholder="Grau" style="width:60px;">
-        <button class="btn btn-gold" id="btnAddNPC">➕ Adicionar</button>
+    <!-- Mestre: formulário -->
+    <div id="npcForm" style="display:none;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+            <input id="npcNome" placeholder="Nome do NPC" style="flex:1;">
+            <input id="npcVoz" placeholder="Voz (ex: grave, rouca)" style="flex:1;">
+            <select id="npcTipo">
+                <option>Humano</option><option>Maldição</option>
+                <option>Espírito</option><option>Shikigami</option>
+                <option>Inimigo</option><option>Aliado</option>
+            </select>
+            <input type="number" id="npcGrau" value="4" placeholder="Grau" style="width:60px;">
+            <button class="btn btn-gold" id="btnAddNPC">➕ Adicionar</button>
+        </div>
+    </div>
+
+    <!-- Barra de pesquisa (⭐ 9) -->
+    <input id="pesquisaNPCs" class="list-search" placeholder="🔎 Procurar NPC...">
+
+    <!-- Ordenação (⭐ 10) -->
+    <div style="display:flex; gap:4px; flex-wrap:wrap; margin-bottom:8px; font-size:0.8rem; color:var(--text-dim);">
+        <span>Ordenar por:</span>
+        <button class="btn btn-sm" data-sort-npc="nome">Nome</button>
+        <button class="btn btn-sm" data-sort-npc="grau">Grau</button>
+        <button class="btn btn-sm" data-sort-npc="tipo">Tipo</button>
+        <button class="btn btn-sm" data-sort-npc="createdAt">Data</button>
     </div>
 
     <div class="list-container" id="npcList">

@@ -1,4 +1,6 @@
 // assets/js/app.js
+import { openDatabase, saveData, loadData, clearAllData, saveSlot, loadSlot } from '../core/database/indexedDB.js';
+
 class AppState {
     constructor() {
         this.role = localStorage.getItem('ocaso_role') || null;
@@ -8,10 +10,14 @@ class AppState {
         this.data = this.getDefaultData();
         this.subscribers = new Map();
         this._dbReady = false;
+        this._saveTimeout = null;
+        this._history = [];
+        this._future = [];
+        this._maxHistory = 50;
+        this._recentModules = JSON.parse(localStorage.getItem('ocaso_recentModules') || '[]');
+        this._favorites = JSON.parse(localStorage.getItem('ocaso_favorites') || '{}');
 
         if (!this.data.campaignLog) this.data.campaignLog = [];
-
-        // Tenta carregar do IndexedDB, se falhar usa localStorage
         this.initDB();
 
         if (this.role === 'master') {
@@ -28,11 +34,9 @@ class AppState {
 
     async initDB() {
         try {
-            // Tenta carregar o módulo IndexedDB dinamicamente
-            const { openDatabase, loadData } = await import('../core/database/indexedDB.js');
-            this._db = { openDatabase, loadData, saveData: (await import('../core/database/indexedDB.js')).saveData };
+            await openDatabase();
             this._dbReady = true;
-            const saved = await this._db.loadData();
+            const saved = await loadData();
             if (saved) {
                 this.data = { ...this.getDefaultData(), ...saved };
                 if (!this.data.campaignLog) this.data.campaignLog = [];
@@ -40,7 +44,6 @@ class AppState {
             }
         } catch (e) {
             console.warn('IndexedDB não disponível, usando localStorage como fallback:', e);
-            this._dbReady = false;
             this.loadLocalFallback();
         }
     }
@@ -50,13 +53,20 @@ class AppState {
             campaign: 'A Sombra do Dragão',
             characters: [],
             sessions: [],
-            combat: { combatants: [], turnIndex: 0, luckPoints: 0, jackpotUsed: false, historico: [], currentRound: 0 },
+            combat: { 
+                combatants: [], 
+                turnIndex: 0, 
+                luckPoints: 0, 
+                jackpotUsed: false,
+                historico: [],
+                currentRound: 0
+            },
             quests: [],
             items: [],
             spells: [],
             domains: [],
             lores: [],
-            settings: { theme: 'default', autoSave: true, language: 'pt-BR' },
+            settings: { theme: 'default', autoSave: true, language: 'pt-BR', sound: true },
             sessionStatus: 'waiting',
             avisos: [],
             notas: '',
@@ -71,13 +81,9 @@ class AppState {
     loadLocalFallback() {
         const saved = localStorage.getItem('ocaso_data');
         if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                this.data = { ...this.getDefaultData(), ...parsed };
-                if (!this.data.campaignLog) this.data.campaignLog = [];
-            } catch (e) {
-                console.warn('Erro ao parsear localStorage:', e);
-            }
+            const parsed = JSON.parse(saved);
+            this.data = { ...this.getDefaultData(), ...parsed };
+            if (!this.data.campaignLog) this.data.campaignLog = [];
         }
     }
 
@@ -85,35 +91,200 @@ class AppState {
         localStorage.setItem('ocaso_data', JSON.stringify(this.data));
     }
 
-    async saveLocally() {
-        if (this._dbReady && this._db) {
-            try {
-                await this._db.saveData(this.data);
-                return;
-            } catch (e) {
-                console.warn('Erro ao salvar no IndexedDB, usando fallback:', e);
+    async saveLocally(showToast = false) {
+        try {
+            await saveData(this.data);
+            if (showToast) {
+                this._showToast('💾 Campanha salva', 'success');
+                this._playSound('save');
             }
+        } catch (e) {
+            console.warn('Erro ao salvar no IndexedDB, usando fallback:', e);
+            this.saveLocallyFallback();
+            if (showToast) this._showToast('💾 Campanha salva (local)', 'success');
         }
-        this.saveLocallyFallback();
     }
 
     async loadLocal() {
-        if (this._dbReady && this._db) {
-            try {
-                const saved = await this._db.loadData();
-                if (saved) {
-                    this.data = { ...this.getDefaultData(), ...saved };
-                    if (!this.data.campaignLog) this.data.campaignLog = [];
-                    return;
-                }
-            } catch (e) {
-                console.warn('Erro ao carregar do IndexedDB, usando fallback:', e);
+        try {
+            const saved = await loadData();
+            if (saved) {
+                this.data = { ...this.getDefaultData(), ...saved };
+                if (!this.data.campaignLog) this.data.campaignLog = [];
             }
+        } catch (e) {
+            this.loadLocalFallback();
         }
-        this.loadLocalFallback();
     }
 
-    // ---- Papel ----
+    // ============================================================
+    // AUTOSAVE INTELIGENTE (⭐ 1)
+    // ============================================================
+    async set(domain, value) {
+        if (this.role === 'spectator') {
+            console.warn('Espectador não pode modificar dados.');
+            return;
+        }
+
+        this._pushHistory();
+
+        this.data[domain] = value;
+        if (this.role === 'master') {
+            clearTimeout(this._saveTimeout);
+            this._saveTimeout = setTimeout(() => {
+                this.saveLocally(true);
+                this._saveTimeout = null;
+            }, 1000);
+            this.broadcastUpdate();
+        } else if (this.role === 'player') {
+            clearTimeout(this._saveTimeout);
+            this._saveTimeout = setTimeout(() => {
+                this.saveLocally(false);
+                this._saveTimeout = null;
+            }, 1000);
+        }
+        this.notify(domain);
+    }
+
+    // ============================================================
+    // UNDO / REDO REAL (⭐ 2)
+    // ============================================================
+    _pushHistory() {
+        if (this._history.length > this._maxHistory) {
+            this._history.shift();
+        }
+        this._history.push(structuredClone(this.data));
+        this._future = [];
+    }
+
+    undo() {
+        if (this._history.length === 0) {
+            this._showToast('⚠️ Nada para desfazer.', 'warning');
+            return;
+        }
+        this._future.push(structuredClone(this.data));
+        this.data = this._history.pop();
+        if (!this.data.campaignLog) this.data.campaignLog = [];
+        this.notifyAll();
+        this.saveLocally(false);
+        this._showToast('↩️ Desfeito.', 'info');
+        this._playSound('undo');
+    }
+
+    redo() {
+        if (this._future.length === 0) {
+            this._showToast('⚠️ Nada para refazer.', 'warning');
+            return;
+        }
+        this._pushHistory();
+        this.data = this._future.pop();
+        if (!this.data.campaignLog) this.data.campaignLog = [];
+        this.notifyAll();
+        this.saveLocally(false);
+        this._showToast('↪️ Refazendo.', 'info');
+        this._playSound('redo');
+    }
+
+    // ============================================================
+    // FAVORITOS (⭐ 4)
+    // ============================================================
+    toggleFavorite(type, id) {
+        if (!this._favorites[type]) this._favorites[type] = [];
+        const idx = this._favorites[type].indexOf(id);
+        if (idx > -1) {
+            this._favorites[type].splice(idx, 1);
+        } else {
+            this._favorites[type].push(id);
+        }
+        localStorage.setItem('ocaso_favorites', JSON.stringify(this._favorites));
+        this.notify('favorites');
+        this._showToast(idx > -1 ? '⭐ Favorito removido' : '⭐ Adicionado aos favoritos', 'info');
+    }
+
+    isFavorite(type, id) {
+        return this._favorites[type]?.includes(id) || false;
+    }
+
+    getFavorites(type) {
+        return this._favorites[type] || [];
+    }
+
+    // ============================================================
+    // RECENTES (⭐ 5)
+    // ============================================================
+    addRecentModule(moduleId) {
+        this._recentModules = this._recentModules.filter(m => m !== moduleId);
+        this._recentModules.unshift(moduleId);
+        if (this._recentModules.length > 10) this._recentModules.pop();
+        localStorage.setItem('ocaso_recentModules', JSON.stringify(this._recentModules));
+        this.notify('recentModules');
+    }
+
+    getRecentModules() {
+        return this._recentModules;
+    }
+
+    // ============================================================
+    // HISTÓRICO DE CAMPANHA (⭐ 20)
+    // ============================================================
+    logAction(message) {
+        const entry = { 
+            timestamp: Date.now(), 
+            message,
+            user: this.role === 'master' ? 'Mestre' : 'Jogador'
+        };
+        if (!this.data.campaignLog) this.data.campaignLog = [];
+        this.data.campaignLog.push(entry);
+        this.notify('campaignLog');
+        clearTimeout(this._saveTimeout);
+        this._saveTimeout = setTimeout(() => {
+            this.saveLocally(false);
+            this._saveTimeout = null;
+        }, 500);
+    }
+
+    // ============================================================
+    // SONS (⭐ 23)
+    // ============================================================
+    _playSound(type) {
+        const soundEnabled = this.data.settings?.sound !== false;
+        if (!soundEnabled) return;
+        try {
+            const sounds = {
+                save: { freq: 800, dur: 0.08 },
+                undo: { freq: 500, dur: 0.1 },
+                redo: { freq: 700, dur: 0.1 },
+                roll: { freq: 600, dur: 0.08 },
+                combat: { freq: 900, dur: 0.15 },
+                quest: { freq: 440, dur: 0.1 },
+                notification: { freq: 660, dur: 0.12 }
+            };
+            const s = sounds[type];
+            if (!s) return;
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = s.freq;
+            gain.gain.value = 0.15;
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + s.dur);
+        } catch(e) { /* silencioso */ }
+    }
+
+    // ============================================================
+    // TOAST (⭐ 6)
+    // ============================================================
+    _showToast(msg, type = 'info') {
+        if (window.showToast) {
+            window.showToast(msg, type);
+        }
+    }
+
+    // ============================================================
+    // P2P E MÉTODOS EXISTENTES
+    // ============================================================
     setRole(role) {
         this.role = role;
         localStorage.setItem('ocaso_role', role);
@@ -128,7 +299,6 @@ class AppState {
         this.destroyOnlineRoom();
     }
 
-    // ---- P2P ----
     startHosting(id) {
         if (this.peer) this.destroyOnlineRoom();
         this.peer = new Peer(id);
@@ -143,13 +313,14 @@ class AppState {
             });
             conn.on('data', (received) => {
                 if (received.type === 'rollRequest') {
-                    window.showToast?.(`📨 ${received.player} pede rolagem de ${received.skill} (CD ${received.difficulty})`);
+                    this._showToast(`📨 ${received.player} pede rolagem de ${received.skill} (CD ${received.difficulty})`, 'info');
                 }
                 if (received.type === 'chat') {
                     // tratado no chat.js
                 }
                 if (received.type === 'notification') {
-                    // tratado
+                    this._showToast('🔔 ' + received.message, 'info');
+                    this._playSound('notification');
                 }
             });
         });
@@ -209,10 +380,11 @@ class AppState {
                     this.data = { ...this.getDefaultData(), ...msg.data };
                     if (!this.data.campaignLog) this.data.campaignLog = [];
                     this.notifyAll();
-                    this.saveLocally();
+                    this.saveLocally(false);
                 }
                 if (msg.type === 'notification') {
-                    window.showToast?.('🔔 ' + msg.message);
+                    this._showToast('🔔 ' + msg.message, 'info');
+                    this._playSound('notification');
                 }
                 if (msg.type === 'chat') {
                     window._handleChatMessage?.(msg);
@@ -223,7 +395,8 @@ class AppState {
                     if (el) {
                         el.innerHTML = `🎲 ${msg.skill}: ${msg.roll} (${sucesso ? '✅ Sucesso' : '❌ Falha'})`;
                     }
-                    window.showToast?.(`📨 ${msg.skill}: ${msg.roll} (${sucesso ? 'Sucesso' : 'Falha'})`);
+                    this._showToast(`📨 ${msg.skill}: ${msg.roll} (${sucesso ? 'Sucesso' : 'Falha'})`, sucesso ? 'success' : 'error');
+                    this._playSound('roll');
                 }
             });
         });
@@ -235,23 +408,7 @@ class AppState {
         localStorage.setItem('ocaso_hostId', hostId);
     }
 
-    // ---- Gerenciamento de dados ----
     get(domain) { return this.data[domain]; }
-
-    async set(domain, value) {
-        if (this.role === 'spectator') {
-            console.warn('Espectador não pode modificar dados.');
-            return;
-        }
-        this.data[domain] = value;
-        if (this.role === 'master') {
-            await this.saveLocally();
-            this.broadcastUpdate();
-        } else if (this.role === 'player') {
-            await this.saveLocally();
-        }
-        this.notify(domain);
-    }
 
     subscribe(domain, callback) {
         if (!this.subscribers.has(domain)) this.subscribers.set(domain, []);
@@ -276,31 +433,22 @@ class AppState {
         this.data = this.getDefaultData();
         if (!this.data.campaignLog) this.data.campaignLog = [];
         if (this.role === 'master') {
-            await this.saveLocally();
+            await this.saveLocally(false);
             this.broadcastUpdate();
         } else {
-            await this.saveLocally();
+            await this.saveLocally(false);
         }
         this.notifyAll();
-    }
-
-    logAction(message) {
-        const entry = { timestamp: Date.now(), message };
-        if (!this.data.campaignLog) this.data.campaignLog = [];
-        this.data.campaignLog.push(entry);
-        this.notify('campaignLog');
-        if (this.role === 'master') {
-            this.saveLocally();
-            this.broadcastUpdate();
-        } else if (this.role === 'player') {
-            this.saveLocally();
-        }
+        this._history = [];
+        this._future = [];
+        this._showToast('🗑️ Campanha resetada.', 'warning');
     }
 
     enviarNotificacao(mensagem) {
         if (this.role === 'master' && this.connection && this.connection.open) {
             this.connection.send({ type: 'notification', message: mensagem });
             console.log('📨 Notificação enviada:', mensagem);
+            this._playSound('notification');
         }
     }
 

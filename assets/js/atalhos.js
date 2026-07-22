@@ -1,81 +1,47 @@
 // assets/js/atalhos.js
 import appState from './app.js';
 
-let desfazerStack = [];
-let refazerStack = [];
-const MAX_HISTORY = 50;
-
 export function init() {
     document.addEventListener('keydown', (e) => {
         // Ctrl+S – Salvar
         if (e.ctrlKey && e.key === 's') {
             e.preventDefault();
             if (appState.getRole() === 'master') {
-                appState.saveLocally();
-                window.showToast?.('💾 Campanha salva!');
+                appState.saveLocally(true);
             }
         }
 
         // Ctrl+Z – Desfazer
         if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
             e.preventDefault();
-            desfazer();
+            appState.undo();
         }
 
         // Ctrl+Y ou Ctrl+Shift+Z – Refazer
         if (e.ctrlKey && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
             e.preventDefault();
-            refazer();
+            appState.redo();
         }
 
-        // Ctrl+F – Buscar (abre modal de busca)
-        if (e.ctrlKey && e.key === 'f') {
+        // Ctrl+K – Busca global (⭐ 3)
+        if (e.ctrlKey && e.key === 'k') {
             e.preventDefault();
             window._abrirBusca?.();
         }
 
-        // Espaço – próximo turno (se no combate)
+        // Espaço – Próximo turno
         if (e.key === ' ' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
             const activeModule = document.querySelector('.nav-link.active');
             if (activeModule && activeModule.dataset.module === 'combate') {
                 e.preventDefault();
                 document.getElementById('btnNextTurn')?.click();
+                appState._playSound('combat');
             }
         }
 
-        // Escape – fechar modais
+        // Esc – Fechar modais
         if (e.key === 'Escape') {
-            document.querySelectorAll('.modal, .modal-overlay').forEach(el => el.remove());
+            document.querySelectorAll('.modal, .modal-overlay, #command-palette, #inspector-panel').forEach(el => el.remove());
         }
     });
-}
-
-function desfazer() {
-    if (desfazerStack.length === 0) return window.showToast?.('⚠️ Nada para desfazer.');
-    const snapshot = desfazerStack.pop();
-    refazerStack.push(JSON.stringify(appState.data));
-    Object.keys(snapshot).forEach(key => {
-        appState.set(key, snapshot[key]);
-    });
-    window.showToast?.('↩️ Desfeito.');
-}
-
-function refazer() {
-    if (refazerStack.length === 0) return window.showToast?.('⚠️ Nada para refazer.');
-    const snapshot = JSON.parse(refazerStack.pop());
-    desfazerStack.push(JSON.parse(JSON.stringify(appState.data)));
-    Object.keys(snapshot).forEach(key => {
-        appState.set(key, snapshot[key]);
-    });
-    window.showToast?.('↪️ Refazendo.');
-}
-
-export function salvarSnapshot() {
-    const snap = {};
-    ['characters', 'quests', 'npcs', 'items', 'combat'].forEach(key => {
-        snap[key] = JSON.parse(JSON.stringify(appState.get(key) || []));
-    });
-    desfazerStack.push(snap);
-    if (desfazerStack.length > MAX_HISTORY) desfazerStack.shift();
-    refazerStack = [];
 }

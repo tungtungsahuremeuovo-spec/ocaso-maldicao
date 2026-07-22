@@ -26,28 +26,41 @@ export function init() {
         const termo = input.value.toLowerCase().trim();
         if (!termo) { resultados.innerHTML = ''; return; }
 
+        // Busca em TODOS os dados (⭐ 3)
         const dados = {
-            'Personagens': appState.get('characters') || [],
-            'Missões': appState.get('quests') || [],
-            'NPCs': appState.get('npcs') || [],
-            'Itens': appState.get('items') || [],
-            'Lore': appState.get('lores') || [],
+            '👥 Personagens': appState.get('characters') || [],
+            '🏴 Missões': appState.get('quests') || [],
+            '🧟 NPCs': appState.get('npcs') || [],
+            '💎 Itens': appState.get('items') || [],
+            '📜 Lore': appState.get('lores') || [],
+            '📝 Notas': appState.get('notas') ? [{ titulo: 'Notas', conteudo: appState.get('notas') }] : [],
+            '📢 Avisos': appState.get('avisos') || [],
+            '📖 Diário': appState.get('campaignLog') || [],
+            '📋 Roteiro': appState.get('roteiro') || [],
+            '🤝 Relacionamentos': appState.get('relacionamentos') || [],
+            '🎲 Macros': appState.get('macros') || [],
+            '⚔️ Combate': appState.get('combat')?.combatants || []
         };
 
         let html = '';
+        let total = 0;
         Object.entries(dados).forEach(([categoria, items]) => {
             const matches = items.filter(item => {
                 const str = JSON.stringify(item).toLowerCase();
                 return str.includes(termo);
             });
             if (matches.length) {
-                html += `<div style="margin-top:8px; font-weight:600; color:var(--gold);">${categoria}</div>`;
-                matches.forEach(item => {
-                    const nome = item.nome || item.titulo || 'Sem nome';
-                    html += `<div style="padding:4px 0; border-bottom:1px solid var(--border);">${escapeHtml(nome)}</div>`;
+                total += matches.length;
+                html += `<div style="margin-top:8px; font-weight:600; color:var(--gold);">${categoria} (${matches.length})</div>`;
+                matches.slice(0, 5).forEach(item => {
+                    const nome = item.nome || item.titulo || item.texto || 'Sem nome';
+                    html += `<div style="padding:4px 0; border-bottom:1px solid var(--border); font-size:0.9rem;">${escapeHtml(nome)}</div>`;
                 });
+                if (matches.length > 5) {
+                    html += `<div style="color:var(--text-dim); font-size:0.8rem;">+ ${matches.length - 5} mais resultados</div>`;
+                }
             }
         });
-        resultados.innerHTML = html || '<p class="empty-state">Nenhum resultado.</p>';
+        resultados.innerHTML = html || `<p class="empty-state">Nenhum resultado encontrado para "${escapeHtml(termo)}".</p>`;
     });
 }
