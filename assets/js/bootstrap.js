@@ -58,6 +58,8 @@ function getBasePath() {
     return scriptUrl.substring(0, scriptUrl.lastIndexOf('/assets/js/')) + '/';
 }
 
+let currentModule = null;
+
 async function navigateTo(moduleId) {
     const content = document.getElementById('content');
     if (!content) return;
@@ -67,21 +69,35 @@ async function navigateTo(moduleId) {
     const jsPath = `../../modules/${moduleId}/${moduleId}.js`;
 
     console.log(`📂 Módulo: ${moduleId}`);
-    console.log(`   Base: ${basePath}`);
     console.log(`   HTML: ${htmlUrl}`);
 
     try {
+        // 1. Destroi o módulo anterior (se existir)
+        if (currentModule?.destroy) {
+            console.log(`🧹 Destruindo módulo anterior...`);
+            currentModule.destroy();
+        }
+
+        // 2. Carrega o HTML
         const htmlResponse = await fetch(htmlUrl);
         if (!htmlResponse.ok) throw new Error(`HTML ${htmlResponse.status}`);
-        const html = await htmlResponse.text();
-        content.innerHTML = html;
+        content.innerHTML = await htmlResponse.text();
 
+        // 3. Importa o módulo JS
         const module = await import(jsPath);
-        if (module.init) module.init();
-        console.log(`✅ ${moduleId} carregado.`);
+        currentModule = module;
+
+        // 4. Inicializa o módulo
+        if (module.init) {
+            module.init();
+            console.log(`✅ ${moduleId} carregado e inicializado.`);
+        } else {
+            console.warn(`⚠️ ${moduleId} não possui função init().`);
+        }
     } catch (err) {
         console.error(`❌ ${moduleId}:`, err);
         content.innerHTML = `<div class="empty-state">❌ Módulo "${moduleId}" não encontrado.</div>`;
+        currentModule = null;
     }
 }
 
@@ -166,7 +182,7 @@ function initializeApp() {
         });
     }
 
-    // ✅ TOGGLE SIDEBAR
+    // Toggle sidebar
     const btnToggle = document.getElementById('btnToggleSidebar');
     if (btnToggle) {
         btnToggle.addEventListener('click', () => {
@@ -179,7 +195,7 @@ function initializeApp() {
         });
     }
 
-    // ✅ ATALHOS DE TECLADO
+    // Atalhos de teclado
     import('./atalhos.js').then(mod => mod.init()).catch(console.warn);
 }
 
