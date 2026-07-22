@@ -8,6 +8,13 @@ class MissoesModule extends BaseModule {
         super('missoes');
         this._sortField = 'titulo';
         this._sortOrder = 'asc';
+        this._onDocumentClick = (e) => {
+            const btn = e.target.closest('.favorite-btn');
+            if (btn) {
+                this.toggleFavorite('quests', btn.dataset.id);
+                this.renderList();
+            }
+        };
     }
 
     init() {
@@ -45,14 +52,7 @@ class MissoesModule extends BaseModule {
         });
 
         // Favoritos (⭐ 4)
-        document.addEventListener('click', (e) => {
-            const btn = e.target.closest('.favorite-btn');
-            if (btn) {
-                const id = btn.dataset.id;
-                this.toggleFavorite('quests', id);
-                this.renderList();
-            }
-        });
+        document.addEventListener('click', this._onDocumentClick);
 
         window._toggleQuest = this.toggleQuest.bind(this);
         window._removeQuest = this.removeQuest.bind(this);
@@ -186,6 +186,7 @@ class MissoesModule extends BaseModule {
 
     destroy() {
         super.destroy();
+        document.removeEventListener('click', this._onDocumentClick);
         document.getElementById('btnAddQuest')?.removeEventListener('click', this.addQuest);
     }
 }

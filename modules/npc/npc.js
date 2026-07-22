@@ -8,6 +8,13 @@ class NpcModule extends BaseModule {
         super('npc');
         this._sortField = 'nome';
         this._sortOrder = 'asc';
+        this._onDocumentClick = (e) => {
+            const btn = e.target.closest('.favorite-btn');
+            if (btn) {
+                this.toggleFavorite('npcs', btn.dataset.id);
+                this.renderList();
+            }
+        };
     }
 
     init() {
@@ -37,14 +44,7 @@ class NpcModule extends BaseModule {
         });
 
         // Favoritos (⭐ 4)
-        document.addEventListener('click', (e) => {
-            const btn = e.target.closest('.favorite-btn');
-            if (btn) {
-                const id = btn.dataset.id;
-                this.toggleFavorite('npcs', id);
-                this.renderList();
-            }
-        });
+        document.addEventListener('click', this._onDocumentClick);
 
         if (role === 'master') {
             document.getElementById('btnAddNPC').addEventListener('click', this.addNPC);
@@ -90,7 +90,6 @@ class NpcModule extends BaseModule {
             const controls = role === 'master' ? `
                 <button class="btn btn-sm favorite-btn ${isFav ? 'active' : ''}" data-id="${n.id}" title="Favorito">⭐</button>
                 <button class="btn btn-sm" onclick="window._duplicateNPC('${n.id}')">📋</button>
-                <button class="btn btn-sm" onclick="window._editNPC('${n.id}')">✏️</button>
                 <button class="btn btn-red btn-sm" onclick="window._removeNPC('${n.id}')">🗑️</button>
             ` : '';
 
@@ -158,6 +157,7 @@ class NpcModule extends BaseModule {
 
     destroy() {
         super.destroy();
+        document.removeEventListener('click', this._onDocumentClick);
         document.getElementById('btnAddNPC')?.removeEventListener('click', this.addNPC);
     }
 }

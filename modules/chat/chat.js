@@ -38,36 +38,12 @@ export function init() {
         }
     };
 
-    if (appState.connection) {
-        appState.connection.on('data', (msg) => {
-            if (msg.type === 'chat') {
-                adicionarMensagem(msg.autor, msg.texto, msg.timestamp);
-                playSound('message');
-            }
-            if (msg.type === 'typing') {
-                atualizarIndicadorDigitando(msg.autor, msg.ativo);
-            }
-        });
-    }
-    if (appState.peer && appState.getRole() === 'master') {
-        appState.peer.on('connection', (conn) => {
-            conn.on('data', (msg) => {
-                if (msg.type === 'chat') {
-                    adicionarMensagem(msg.autor, msg.texto, msg.timestamp);
-                    playSound('message');
-                    if (appState.connection && appState.connection.open) {
-                        appState.connection.send(msg);
-                    }
-                }
-                if (msg.type === 'typing') {
-                    atualizarIndicadorDigitando(msg.autor, msg.ativo);
-                    if (appState.connection && appState.connection.open) {
-                        appState.connection.send(msg);
-                    }
-                }
-            });
-        });
-    }
+}
+
+export function destroy() {
+    clearTimeout(typingTimeout);
+    typingTimeout = null;
+    delete window._handleChatMessage;
 }
 
 function enviarMensagem() {

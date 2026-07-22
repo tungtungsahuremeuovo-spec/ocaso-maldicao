@@ -1,5 +1,5 @@
 // assets/js/app.js
-import { openDatabase, saveData, loadData, clearAllData, saveSlot, loadSlot } from '../core/database/indexedDB.js';
+import { openDatabase, saveData, loadData } from '../../core/database/indexedDB.js';
 
 class AppState {
     constructor() {
@@ -18,13 +18,13 @@ class AppState {
         this._favorites = JSON.parse(localStorage.getItem('ocaso_favorites') || '{}');
 
         if (!this.data.campaignLog) this.data.campaignLog = [];
-        this.initDB();
+        // All consumers await this promise before rendering.  Previously the
+        // application rendered default data while two concurrent reads could
+        // later overwrite user changes.
+        this.ready = this.initDB();
 
-        if (this.role === 'master') {
-            this.loadLocal();
-            if (this.hostId) {
-                this.startHosting(this.hostId);
-            }
+        if (this.role === 'master' && this.hostId) {
+            this.startHosting(this.hostId);
         } else if (this.role === 'player' && this.hostId) {
             this.connectToHost(this.hostId);
         } else if (this.role === 'spectator' && this.hostId) {
@@ -35,13 +35,13 @@ class AppState {
     async initDB() {
         try {
             await openDatabase();
-            this._dbReady = true;
             const saved = await loadData();
             if (saved) {
                 this.data = { ...this.getDefaultData(), ...saved };
                 if (!this.data.campaignLog) this.data.campaignLog = [];
                 this.notifyAll();
             }
+            this._dbReady = true;
         } catch (e) {
             console.warn('IndexedDB não disponível, usando localStorage como fallback:', e);
             this.loadLocalFallback();
@@ -74,16 +74,22 @@ class AppState {
             relacionamentos: [],
             macros: [],
             roteiro: [],
-            loot: []
+            loot: [],
+            faccoes: [],
+            chatHistory: []
         };
     }
 
     loadLocalFallback() {
-        const saved = localStorage.getItem('ocaso_data');
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            this.data = { ...this.getDefaultData(), ...parsed };
-            if (!this.data.campaignLog) this.data.campaignLog = [];
+        try {
+            const saved = localStorage.getItem('ocaso_data');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                this.data = { ...this.getDefaultData(), ...parsed };
+                if (!this.data.campaignLog) this.data.campaignLog = [];
+            }
+        } catch (error) {
+            console.warn('Backup local inválido; ignorando-o.', error);
         }
     }
 
@@ -102,18 +108,6 @@ class AppState {
             console.warn('Erro ao salvar no IndexedDB, usando fallback:', e);
             this.saveLocallyFallback();
             if (showToast) this._showToast('💾 Campanha salva (local)', 'success');
-        }
-    }
-
-    async loadLocal() {
-        try {
-            const saved = await loadData();
-            if (saved) {
-                this.data = { ...this.getDefaultData(), ...saved };
-                if (!this.data.campaignLog) this.data.campaignLog = [];
-            }
-        } catch (e) {
-            this.loadLocalFallback();
         }
     }
 
@@ -316,7 +310,10 @@ class AppState {
                     this._showToast(`📨 ${received.player} pede rolagem de ${received.skill} (CD ${received.difficulty})`, 'info');
                 }
                 if (received.type === 'chat') {
-                    // tratado no chat.js
+                    window._handleChatMessage?.(received);
+                }
+                if (received.type === 'typing') {
+                    window._handleChatMessage?.(received);
                 }
                 if (received.type === 'notification') {
                     this._showToast('🔔 ' + received.message, 'info');
@@ -413,19 +410,44 @@ class AppState {
     subscribe(domain, callback) {
         if (!this.subscribers.has(domain)) this.subscribers.set(domain, []);
         this.subscribers.get(domain).push(callback);
-        return () => {
+        const unsubscribe = () => {
             const arr = this.subscribers.get(domain);
             const idx = arr.indexOf(callback);
             if (idx > -1) arr.splice(idx, 1);
         };
+        if (this._activeModuleScope) {
+            this._activeModuleScope.cleanups.push(unsubscribe);
+        }
+        return unsubscribe;
     }
 
     notify(domain) {
-        (this.subscribers.get(domain) || []).forEach(fn => fn(this.data[domain]));
+        (this.subscribers.get(domain) || []).slice().forEach(fn => {
+            try {
+                fn(this.data[domain]);
+            } catch (error) {
+                // One stale module must not prevent the remaining UI from
+                // receiving state updates.
+                console.error(`Subscriber inválido para "${domain}"`, error);
+            }
+        });
     }
 
     notifyAll() {
         Object.keys(this.data).forEach(d => this.notify(d));
+    }
+
+    beginModuleScope(moduleId) {
+        this.endModuleScope();
+        this._activeModuleScope = { moduleId, cleanups: [] };
+    }
+
+    endModuleScope() {
+        if (!this._activeModuleScope) return;
+        this._activeModuleScope.cleanups.splice(0).forEach(cleanup => {
+            try { cleanup(); } catch (error) { console.warn('Erro ao limpar módulo', error); }
+        });
+        this._activeModuleScope = null;
     }
 
     async reset() {
@@ -487,6 +509,39 @@ class AppState {
         };
     }
 }
+
+// Shared confirmation dialog.  Keeping it available from bootstrap prevents
+// modules from depending on Configurações having been opened first.
+window.confirmAction = (message, onConfirm, onCancel) => {
+    const dialog = document.createElement('div');
+    dialog.className = 'confirm-dialog';
+    const panel = document.createElement('div');
+    const text = document.createElement('p');
+    text.style.marginBottom = '12px';
+    text.textContent = message;
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+    const cancel = document.createElement('button');
+    cancel.className = 'btn';
+    cancel.textContent = 'Cancelar';
+    const confirm = document.createElement('button');
+    confirm.className = 'btn btn-red';
+    confirm.textContent = 'Confirmar';
+    actions.append(cancel, confirm);
+    panel.append(text, actions);
+    dialog.appendChild(panel);
+    const close = (callback) => {
+        dialog.remove();
+        callback?.();
+    };
+    cancel.addEventListener('click', () => close(onCancel));
+    confirm.addEventListener('click', () => close(onConfirm));
+    dialog.addEventListener('click', (event) => {
+        if (event.target === dialog) close(onCancel);
+    });
+    document.body.appendChild(dialog);
+    return dialog;
+};
 
 export const appState = new AppState();
 export default appState;

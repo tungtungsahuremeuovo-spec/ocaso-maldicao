@@ -2,6 +2,8 @@
 import appState from '../../assets/js/app.js';
 import { escapeHtml } from '../../core/utils/utils.js';
 
+let onKeyDown = null;
+
 export function init() {
     const modal = document.getElementById('buscaModal');
     const input = document.getElementById('buscaInput');
@@ -9,11 +11,12 @@ export function init() {
 
     if (!modal) return;
 
-    document.addEventListener('keydown', (e) => {
+    onKeyDown = (e) => {
         if (e.key === 'Escape' && modal.style.display !== 'none') {
             modal.style.display = 'none';
         }
-    });
+    };
+    document.addEventListener('keydown', onKeyDown);
 
     window._abrirBusca = () => {
         modal.style.display = 'flex';
@@ -63,4 +66,10 @@ export function init() {
         });
         resultados.innerHTML = html || `<p class="empty-state">Nenhum resultado encontrado para "${escapeHtml(termo)}".</p>`;
     });
+}
+
+export function destroy() {
+    if (onKeyDown) document.removeEventListener('keydown', onKeyDown);
+    onKeyDown = null;
+    delete window._abrirBusca;
 }

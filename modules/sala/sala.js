@@ -266,3 +266,12 @@ function encerrarVotacao() {
         window.showToast?.('💡 O grupo recebeu inspiração (vantagem)!');
     }
 }
+
+export function destroy() {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+    if (player?.destroy) player.destroy();
+    player = null;
+    playerReady = false;
+    isMusicPlaying = false;
+}

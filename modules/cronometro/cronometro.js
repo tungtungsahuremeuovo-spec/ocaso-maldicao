@@ -16,3 +16,8 @@ export function init() {
     document.getElementById('btnPause').addEventListener('click', () => { clearInterval(timer); timer = null; });
     document.getElementById('btnReset').addEventListener('click', () => { clearInterval(timer); timer = null; seconds = 0; display.textContent = '00:00:00'; });
 }
+
+export function destroy() {
+    clearInterval(timer);
+    timer = null;
+}

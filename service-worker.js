@@ -1,11 +1,11 @@
 const CACHE_NAME = 'ocaso-maldicao-v1';
 const ASSETS = [
-    '/',
-    '/index.html',
-    '/assets/css/main.css',
-    '/assets/css/variables.css',
-    '/assets/js/app.js',
-    '/assets/js/bootstrap.js',
+    './',
+    './index.html',
+    './assets/css/main.css',
+    './assets/css/variables.css',
+    './assets/js/app.js',
+    './assets/js/bootstrap.js',
 ];
 
 self.addEventListener('install', (event) => {
@@ -24,7 +24,7 @@ self.addEventListener('fetch', (event) => {
                 }
                 return response;
             });
-            return cached || networked;
+            return cached || networked.catch(() => new Response('Offline', { status: 503 }));
         })
     );
 });

@@ -60,6 +60,7 @@ function getBasePath() {
 
 let currentModule = null;
 let breadcrumb = [];
+let navigationSequence = 0;
 
 // ============================================================
 // 3. Navegação (com Breadcrumb)
@@ -67,6 +68,8 @@ let breadcrumb = [];
 async function navigateTo(moduleId, sub = null) {
     const content = document.getElementById('content');
     if (!content) return;
+
+    const sequence = ++navigationSequence;
 
     const basePath = getBasePath();
     const htmlUrl = `${basePath}modules/${moduleId}/${moduleId}.html`;
@@ -76,6 +79,7 @@ async function navigateTo(moduleId, sub = null) {
 
     try {
         // Destroi o módulo anterior
+        appState.endModuleScope();
         if (currentModule?.destroy) {
             console.log(`🧹 Destruindo módulo anterior...`);
             currentModule.destroy();
@@ -87,11 +91,15 @@ async function navigateTo(moduleId, sub = null) {
         // Carrega HTML
         const htmlResponse = await fetch(htmlUrl);
         if (!htmlResponse.ok) throw new Error(`HTML ${htmlResponse.status}`);
-        content.innerHTML = await htmlResponse.text();
+        const html = await htmlResponse.text();
+        if (sequence !== navigationSequence) return;
+        content.innerHTML = html;
 
         // Importa JS
         const module = await import(jsPath);
+        if (sequence !== navigationSequence) return;
         currentModule = module;
+        appState.beginModuleScope(moduleId);
 
         // Inicializa
         if (module.init) {
@@ -109,6 +117,7 @@ async function navigateTo(moduleId, sub = null) {
         appState.addRecentModule(moduleId);
 
     } catch (err) {
+        if (sequence !== navigationSequence) return;
         console.error(`❌ ${moduleId}:`, err);
         content.innerHTML = `<div class="empty-state">❌ Módulo "${moduleId}" não encontrado.</div>`;
         currentModule = null;
@@ -369,7 +378,12 @@ function setupMenuScreen() {
 // ============================================================
 // 8. Inicialização do App
 // ============================================================
-function initializeApp() {
+async function initializeApp() {
+    try {
+        await appState.ready;
+    } catch (error) {
+        console.warn('Não foi possível concluir a carga da campanha.', error);
+    }
     const role = appState.getRole();
     console.log(`🎮 Inicializando como ${role}`);
     loadSidebar(role);
@@ -560,6 +574,11 @@ window.showToast = (msg, type = 'info') => {
 // 11. Inicialização
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./service-worker.js').catch(error => {
+            console.warn('Service worker não pôde ser registrado.', error);
+        });
+    }
     setupMenuScreen();
 });
 

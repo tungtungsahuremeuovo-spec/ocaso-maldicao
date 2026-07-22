@@ -1,5 +1,5 @@
 // assets/js/atalhos.js
-import appState from './app.js';
+import appState from '../../assets/js/app.js';
 
 let desfazerStack = [];
 let refazerStack = [];

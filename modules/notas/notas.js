@@ -1,6 +1,8 @@
 // modules/notas/notas.js
 import appState from '../../assets/js/app.js';
 
+let autoSaveInterval = null;
+
 export function init() {
     const editor = document.getElementById('notasEditor');
     if (!editor) {
@@ -12,7 +14,8 @@ export function init() {
     const btnSalvar = document.getElementById('btnSalvarNotas');
     if (btnSalvar) {
         btnSalvar.addEventListener('click', salvarNotas);
-        setInterval(salvarNotas, 30000);
+        clearInterval(autoSaveInterval);
+        autoSaveInterval = setInterval(salvarNotas, 30000);
     }
 }
 
@@ -26,4 +29,9 @@ function salvarNotas() {
         statusEl.textContent = '✅ Salvo em ' + new Date().toLocaleTimeString('pt-BR');
     }
     appState.logAction('📝 Notas atualizadas.');
+}
+
+export function destroy() {
+    clearInterval(autoSaveInterval);
+    autoSaveInterval = null;
 }

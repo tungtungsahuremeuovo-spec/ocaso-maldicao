@@ -15,6 +15,7 @@ export class BaseModule {
         this._recentKey = 'recentModules';
         this._sortField = 'nome';
         this._sortOrder = 'asc';
+        this._timers = [];
     }
 
     /**
@@ -41,6 +42,7 @@ export class BaseModule {
             }
         });
         this._unsubscribes.length = 0;
+        this._timers.splice(0).forEach(clearTimeout);
         this._isInitialized = false;
         this._hideLoader();
         this._hideSkeleton();
@@ -61,9 +63,9 @@ export class BaseModule {
         }
         this._showLoader();
         // Simula carregamento e depois esconde o loader
-        setTimeout(() => this._hideLoader(), 300);
+        this._timers.push(setTimeout(() => this._hideLoader(), 300));
         this._renderSkeleton();
-        setTimeout(() => this._hideSkeleton(), 400);
+        this._timers.push(setTimeout(() => this._hideSkeleton(), 400));
     }
 
     // ============================================================
@@ -119,10 +121,10 @@ export class BaseModule {
             </div>
         `;
         content.appendChild(skeleton);
-        setTimeout(() => {
+        this._timers.push(setTimeout(() => {
             const sk = content.querySelector('.skeleton-container');
             if (sk) sk.remove();
-        }, 600);
+        }, 600));
     }
 
     _hideSkeleton() {
